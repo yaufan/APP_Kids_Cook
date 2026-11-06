@@ -29,11 +29,26 @@ android {
         versionName = flutter.versionName
     }
 
+    // The cloud builds sign with a test key that stays the same from build to
+    // build (the repository's Actions secrets, as in the sibling apps), so a
+    // new APK installs over the old one and the coins and recipe book stay.
+    // Without it (a build on your own computer) the debug key signs.
+    val testKeystore = System.getenv("ANIMAL_RESTAURANT_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (testKeystore != null) {
+            create("test") {
+                storeFile = testKeystore
+                storeType = "pkcs12"
+                storePassword = System.getenv("ANIMAL_RESTAURANT_KEYSTORE_PASSWORD")
+                keyAlias = "kidspaint"
+                keyPassword = System.getenv("ANIMAL_RESTAURANT_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (testKeystore != null) "test" else "debug")
         }
     }
 }
