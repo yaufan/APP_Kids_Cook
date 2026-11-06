@@ -1,0 +1,92 @@
+{
+  "bear": {
+    "viewBox": {
+      "width": 474,
+      "height": 508
+    },
+    "mouth": {
+      "x": 237.0,
+      "y": 234.0
+    },
+    "mouthHappy": {
+      "x": 237.0,
+      "y": 231.3
+    },
+    "headTop": {
+      "x": 237.0,
+      "y": 8.2
+    }
+  },
+  "rabbit": {
+    "viewBox": {
+      "width": 474,
+      "height": 698
+    },
+    "mouth": {
+      "x": 237.0,
+      "y": 416.0
+    },
+    "mouthHappy": {
+      "x": 237.0,
+      "y": 424.0
+    },
+    "headTop": {
+      "x": 237.0,
+      "y": 10.1
+    }
+  },
+  "cat": {
+    "viewBox": {
+      "width": 474,
+      "height": 530
+    },
+    "mouth": {
+      "x": 237.0,
+      "y": 245.3
+    },
+    "mouthHappy": {
+      "x": 237.0,
+      "y": 253.3
+    },
+    "headTop": {
+      "x": 237.0,
+      "y": 3.3
+    }
+  },
+  "pig": {
+    "viewBox": {
+      "width": 474,
+      "height": 514
+    },
+    "mouth": {
+      "x": 237.0,
+      "y": 275.0
+    },
+    "mouthHappy": {
+      "x": 237.0,
+      "y": 277.6
+    },
+    "headTop": {
+      "x": 237.0,
+      "y": 3.5
+    }
+  },
+  "duck": {
+    "viewBox": {
+      "width": 474,
+      "height": 567
+    },
+    "mouth": {
+      "x": 237.0,
+      "y": 258.1
+    },
+    "mouthHappy": {
+      "x": 237.0,
+      "y": 282.3
+    },
+    "headTop": {
+      "x": 237.0,
+      "y": 2.7
+    }
+  }
+}

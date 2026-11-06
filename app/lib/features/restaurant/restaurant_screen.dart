@@ -121,6 +121,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
                     excludeSemantics: true,
                     onTap: _openParent,
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: _openParent,
                       child: Container(
                         width: 44,
@@ -150,6 +151,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
                   label: customer.zh,
                   excludeSemantics: true,
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _sounds.play(voiceOf(customer)),
                     child: Breathing(child: Art(visit.served ? 'customers/${customer.name}_happy' : 'customers/${customer.name}', fit: BoxFit.contain)),
                   ),
@@ -165,6 +167,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
                 top: math.max(70, counterTop - cw * 0.92 - 150),
                 child: Center(
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _say(Strings.order(order), en: order.dish.en),
                     child: Semantics(
                       container: true,

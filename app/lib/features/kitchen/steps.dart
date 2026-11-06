@@ -367,18 +367,24 @@ class _TapInStepState extends State<TapInStep> with TickerProviderStateMixin {
             button: true,
             label: Strings.tapIn,
             excludeSemantics: true,
-            child: GestureDetector(onTap: _tap, child: Breathing(amount: 0.05, child: Art(step.art))),
+            child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _tap, child: Breathing(amount: 0.05, child: Art(step.art))),
           ),
         ),
-        AnimatedBuilder(
-          animation: _fly,
-          builder: (_, _) {
-            if (!_fly.isAnimating) return const SizedBox.shrink();
-            final v = Curves.easeIn.transform(_fly.value);
-            final at = Offset.lerp(source.center, target.center, v)! + Offset(0, -math.sin(v * math.pi) * 80);
-            final s = source.width * (1 - 0.4 * v);
-            return Positioned(left: at.dx - s / 2, top: at.dy - s / 2, width: s, height: s, child: Art(step.art));
-          },
+        // What is flying in (a Stack of its own: the step's Stack must hold
+        // only positioned children, or it shrinks to nothing).
+        Positioned.fill(
+          child: IgnorePointer(
+            child: AnimatedBuilder(
+              animation: _fly,
+              builder: (_, _) {
+                if (!_fly.isAnimating) return const SizedBox.shrink();
+                final v = Curves.easeIn.transform(_fly.value);
+                final at = Offset.lerp(source.center, target.center, v)! + Offset(0, -math.sin(v * math.pi) * 80);
+                final s = source.width * (1 - 0.4 * v);
+                return Stack(children: [Positioned(left: at.dx - s / 2, top: at.dy - s / 2, width: s, height: s, child: Art(step.art))]);
+              },
+            ),
+          ),
         ),
         Positioned(left: 0, right: 0, bottom: 16, child: Center(child: CountDots(count: step.count, done: _in, size: 22))),
       ]);
@@ -990,6 +996,7 @@ class _WrapStepState extends State<WrapStep> {
               label: Strings.wrapPinch,
               excludeSemantics: true,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: _pinch,
                 child: AnimatedScale(
                   scale: 1 - _pinches * 0.08,
@@ -1010,6 +1017,7 @@ class _WrapStepState extends State<WrapStep> {
               label: Strings.wrapFill,
               excludeSemantics: true,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: _fill,
                 child: Breathing(
                   amount: _filled ? 0 : 0.05,
@@ -1115,7 +1123,7 @@ class _BoilStepState extends State<BoilStep> with TickerProviderStateMixin, _Clo
                   button: true,
                   label: Strings.floated,
                   excludeSemantics: true,
-                  child: GestureDetector(onTap: _scoop, child: Breathing(amount: up >= 1 ? 0.07 : 0, child: const Art('tools/ladle'))),
+                  child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _scoop, child: Breathing(amount: up >= 1 ? 0.07 : 0, child: const Art('tools/ladle'))),
                 ),
               ),
             ]);

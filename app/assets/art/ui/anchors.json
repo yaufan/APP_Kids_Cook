@@ -1,0 +1,34 @@
+{
+  "speech": {
+    "viewBox": {
+      "width": 467,
+      "height": 385
+    },
+    "content": {
+      "x": 227.0,
+      "y": 147.0
+    },
+    "contentTopLeft": {
+      "x": 57,
+      "y": 41
+    },
+    "contentBottomRight": {
+      "x": 397,
+      "y": 253
+    },
+    "tail": {
+      "x": 213.0,
+      "y": 345.0
+    }
+  },
+  "hand_hint": {
+    "viewBox": {
+      "width": 147,
+      "height": 198
+    },
+    "fingertip": {
+      "x": 75.0,
+      "y": 4.8
+    }
+  }
+}

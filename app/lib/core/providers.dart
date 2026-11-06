@@ -58,4 +58,7 @@ class VisitNotifier extends Notifier<Visit> {
   }
 
   void next() => state = Visit(ref.read(gameProvider).nextOrder(ref.read(randomProvider), last: state.order.dish.id));
+
+  /// A particular order (the walk-through and the demo use it).
+  void take(Order order) => state = Visit(order);
 }

@@ -1,0 +1,264 @@
+{
+  "cutting_board": {
+    "viewBox": {
+      "width": 620,
+      "height": 387
+    },
+    "center": {
+      "x": 272,
+      "y": 177
+    },
+    "area": {
+      "x": 272,
+      "y": 177,
+      "r": 130.0
+    }
+  },
+  "knife": {
+    "viewBox": {
+      "width": 400,
+      "height": 87
+    },
+    "tip": {
+      "x": 386,
+      "y": 41
+    },
+    "grip": {
+      "x": 86,
+      "y": 39
+    }
+  },
+  "bowl": {
+    "viewBox": {
+      "width": 353,
+      "height": 353
+    },
+    "center": {
+      "x": 169,
+      "y": 157
+    },
+    "inside": {
+      "x": 169,
+      "y": 157,
+      "r": 122.0
+    }
+  },
+  "bowl_egg": {
+    "viewBox": {
+      "width": 353,
+      "height": 353
+    },
+    "center": {
+      "x": 169,
+      "y": 157
+    },
+    "inside": {
+      "x": 169,
+      "y": 157,
+      "r": 122.0
+    }
+  },
+  "whisk": {
+    "viewBox": {
+      "width": 89,
+      "height": 296
+    },
+    "loops": {
+      "x": 44,
+      "y": 232
+    },
+    "grip": {
+      "x": 44,
+      "y": 72
+    }
+  },
+  "chopsticks": {
+    "viewBox": {
+      "width": 82,
+      "height": 336
+    },
+    "tips": {
+      "x": 40,
+      "y": 325
+    }
+  },
+  "spoon": {
+    "viewBox": {
+      "width": 129,
+      "height": 333
+    },
+    "bowl": {
+      "x": 61,
+      "y": 247,
+      "r": 40.0
+    }
+  },
+  "ladle": {
+    "viewBox": {
+      "width": 161,
+      "height": 360
+    },
+    "bowl": {
+      "x": 76,
+      "y": 265,
+      "r": 50.0
+    }
+  },
+  "pan": {
+    "viewBox": {
+      "width": 543,
+      "height": 373
+    },
+    "center": {
+      "x": 179,
+      "y": 167
+    },
+    "inside": {
+      "x": 179,
+      "y": 167,
+      "r": 134.0
+    }
+  },
+  "stove": {
+    "viewBox": {
+      "width": 450,
+      "height": 450
+    },
+    "center": {
+      "x": 218,
+      "y": 203
+    },
+    "flame": {
+      "x": 218,
+      "y": 203,
+      "r": 120.0
+    }
+  },
+  "sink": {
+    "viewBox": {
+      "width": 490,
+      "height": 390
+    },
+    "spout": {
+      "x": 238,
+      "y": 127
+    },
+    "basin": {
+      "x": 238,
+      "y": 193
+    }
+  },
+  "plate": {
+    "viewBox": {
+      "width": 350,
+      "height": 350
+    },
+    "center": {
+      "x": 168,
+      "y": 157
+    },
+    "inside": {
+      "x": 168,
+      "y": 157,
+      "r": 108.0
+    }
+  },
+  "tray": {
+    "viewBox": {
+      "width": 550,
+      "height": 380
+    },
+    "center": {
+      "x": 268,
+      "y": 172
+    }
+  },
+  "cup": {
+    "viewBox": {
+      "width": 180,
+      "height": 238
+    },
+    "insideTopLeft": {
+      "x": 16,
+      "y": 17
+    },
+    "insideTopRight": {
+      "x": 164,
+      "y": 17
+    },
+    "insideBottomLeft": {
+      "x": 38,
+      "y": 223
+    },
+    "insideBottomRight": {
+      "x": 142,
+      "y": 223
+    },
+    "rim": {
+      "x": 90,
+      "y": 9
+    }
+  },
+  "lid": {
+    "viewBox": {
+      "width": 176,
+      "height": 66
+    },
+    "rim": {
+      "x": 88,
+      "y": 58
+    },
+    "hole": {
+      "x": 88,
+      "y": 8
+    }
+  },
+  "straw": {
+    "viewBox": {
+      "width": 34,
+      "height": 363
+    },
+    "top": {
+      "x": 17,
+      "y": 9
+    },
+    "tip": {
+      "x": 17,
+      "y": 349
+    }
+  },
+  "teapot": {
+    "viewBox": {
+      "width": 364,
+      "height": 300
+    },
+    "spout": {
+      "x": 15,
+      "y": 68
+    },
+    "pivot": {
+      "x": 189,
+      "y": 158
+    }
+  },
+  "pot": {
+    "viewBox": {
+      "width": 405,
+      "height": 383
+    },
+    "water": {
+      "x": 201,
+      "y": 128
+    }
+  },
+  "pot_boil": {
+    "viewBox": {
+      "width": 405,
+      "height": 383
+    },
+    "water": {
+      "x": 201,
+      "y": 128
+    }
+  }
+}

@@ -65,9 +65,13 @@ def dk(c, t):
     return mix(c, "#2A140A", t)
 
 
+PREC = 1     # decimals written for coordinates (the big backgrounds use 0)
+LITE = False  # fewer shadow and edge layers (the big backgrounds, which have many pieces)
+
+
 def f(v):
-    """A number for the SVG: one decimal, no trailing .0."""
-    s = f"{v:.1f}"
+    """A number for the SVG: one decimal (PREC), no trailing .0."""
+    s = f"{v:.{PREC}f}"
     if s.endswith(".0"):
         s = s[:-2]
     if s == "-0":
@@ -317,6 +321,13 @@ def blob(pts, t=1.0, closed=True):
 
 def rpoly(pts, r):
     """Polygon with rounded corners."""
+    clean = []
+    for q in pts:
+        if not clean or math.hypot(q[0] - clean[-1][0], q[1] - clean[-1][1]) > 1e-6:
+            clean.append(q)
+    while len(clean) > 2 and math.hypot(clean[0][0] - clean[-1][0], clean[0][1] - clean[-1][1]) < 1e-6:
+        clean.pop()
+    pts = clean
     n = len(pts)
     p = Path()
     for i in range(n):
@@ -372,6 +383,8 @@ class Page:
         self.box = None
         self.n = 0
         self.paths = {}
+        self.marks = {}
+        self.uses = 0
 
     def uid(self, p="c"):
         self.n += 1
@@ -502,11 +515,18 @@ def depth_of(p, depth=None):
 
 
 def _sw(w):
-    return f(w) if w >= .95 else str(round(w, 2))
+    return _n(w) if w < 10 else f"{w:.0f}"
 
 
-def pathref(p):
-    """Put the shape in <defs> once; pieces draw it again with <use>, which keeps files small."""
+USE_BUDGET = 850   # flutter_svg refuses a picture with more than 1000 <use> expansions
+
+
+def pathref(p, need=14):
+    """Put the shape in <defs> once; pieces draw it again with <use>, which keeps files small.
+    When the page has used up its budget of <use>, return None: the piece is written out in full."""
+    if PG.uses + need > USE_BUDGET:
+        return None
+    PG.uses += need
     d = p.d()
     key = PG.paths.get(d)
     if key is None:
@@ -516,38 +536,66 @@ def pathref(p):
     return key
 
 
-def drop(p, b, opacity=1.0, dx=None, dy=None, ref=None):
+def shape_el(p, ref, attrs):
+    return f'<use href="#{ref}" {attrs}/>' if ref else f'<path d="{p.d()}" {attrs}/>'
+
+
+SHADOW_STEPS = ((2.0, .03), (1.6, .035), (1.2, .04), (.85, .045), (.5, .045), (.2, .05))
+SHADOW_LITE = ((1.9, .045), (1.2, .055), (.6, .065), (.15, .07))
+
+
+def drop(p, b, opacity=1.0, dx=None, dy=None, ref=False):
     """Soft shadow of a shape, down and to the right: fatter, fainter copies make the edge fade."""
     dx = b * .3 if dx is None else dx
     dy = b * .75 if dy is None else dy
-    ref = ref or pathref(p)
-    for w, op in ((b * 1.7, .035), (b * 1.2, .04), (b * .75, .045), (b * .35, .05), (0, .055)):
-        st = f' stroke="{SHADOW}" stroke-width="{_sw(w)}" stroke-linejoin="round"' if w else ""
-        emit(f'<use href="#{ref}" x="{f(dx)}" y="{f(dy)}" fill="{SHADOW}"{st} opacity="{round(op * opacity, 3)}"/>')
+    steps = SHADOW_LITE if LITE else SHADOW_STEPS
+    if ref is False:
+        ref = pathref(p, len(steps))
+    layers = "".join(shape_el(p, ref, f'stroke-width="{_sw(b * w)}" opacity="{_op(op * opacity)}"') for w, op in steps)
+    emit(f'<g transform="translate({_n(dx)} {_n(dy)})" fill="{SHADOW}" stroke="{SHADOW}" stroke-linejoin="round">{layers}</g>')
     grow_path(p, b * .85, dx, dy)
+
+
+def _op(v):
+    s = f"{v:.3f}".rstrip("0").rstrip(".")
+    return s[1:] if s.startswith("0.") else s
+
+
+def _n(v):
+    """A small length (shadow offsets, widths): two decimals at most."""
+    s = f"{v:.2f}".rstrip("0").rstrip(".")
+    return s or "0"
 
 
 def clay(p, color, depth=None, shadow=True, inv=False, shine=True, edge=True, dents=(), opacity=None, sh_op=1.0):
     """One clay piece. depth: how round the edge is (local units; default from size)."""
     b = depth_of(p, depth)
-    ref = pathref(p)
+    if b > 6 and LITE:
+        lay = tuple((b * (2.9 - .55 * i), .22) for i in range(5))
+    elif b > 6:
+        lay = tuple((b * (2.9 - .38 * i), .17) for i in range(7))
+    elif b > 2.5:
+        lay = ((b * 2.6, .3), (b * 1.9, .32), (b * 1.25, .34), (b * .65, .38))
+    else:
+        lay = ((b * 2, .5), (b * .9, .55))
+    ref = pathref(p, ((4 if LITE else 6) if shadow else 0) + 1 + (1 + len(lay) if edge else 0))
     if opacity is not None:
         emit(f'<g opacity="{opacity}">')
     if shadow:
         drop(p, b, sh_op, ref=ref)
-    emit(f'<use href="#{ref}" fill="{cg(color, inv)}"/>')
+    emit(shape_el(p, ref, f'fill="{cg(color, inv)}"'))
     grow_path(p)
     if edge:
-        cid = "k" + ref
-        PG.defs.setdefault(cid, f'<clipPath id="{cid}"><use href="#{ref}"/></clipPath>')
+        cid = "k" + ref if ref else PG.uid("k")
+        PG.defs.setdefault(cid, f'<clipPath id="{cid}">{shape_el(p, ref, "")}</clipPath>')
         r = rim(color, inv)
-        lay = ((b * 2.6, .32), (b * 1.9, .34), (b * 1.25, .36), (b * .65, .4)) if b > 2.5 else ((b * 2, .5), (b * .9, .55))
-        emit(f'<g clip-path="url(#{cid})">' + "".join(
-            f'<use href="#{ref}" fill="none" stroke="{r}" stroke-width="{_sw(w)}" opacity="{op}"/>' for w, op in lay) + "</g>")
+        emit(f'<g clip-path="url(#{cid})" fill="none" stroke="{r}">' + "".join(
+            shape_el(p, ref, f'stroke-width="{_sw(w)}" opacity="{_op(op)}"') for w, op in lay) + "</g>")
     if shine and not inv:
         x0, y0, x1, y1 = p.bbox()
         w, h = x1 - x0, y1 - y0
-        spot(x0 + w * .3, y0 + h * .26, max(w * .13, 1), max(h * .07, .6), -35, .5, local=False)
+        spot(x0 + w * .3, y0 + h * .26, max(min(w * .13, 44), 1), max(min(h * .07, 16), .6), -35,
+             .5 if shine is True else shine, local=False)
     for dn in dents:
         dent(*dn)
     if opacity is not None:
@@ -583,13 +631,13 @@ def contact(cx, cy, rx, ry, op=.32):
 def dent(cx, cy, r, rot=0, op=.8):
     """A shallow thumbprint: darker upper-left rim, lighter lower-right, faint ridges."""
     g = defadd("dentg", '<radialGradient id="dentg" cx="50%" cy="50%" r="50%" fx="64%" fy="68%">'
-                        '<stop offset="0" stop-color="#fff" stop-opacity=".24"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/>'
-                        '<stop offset=".86" stop-color="#2A140A" stop-opacity=".16"/><stop offset="1" stop-color="#2A140A" stop-opacity="0"/></radialGradient>')
+                        '<stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>'
+                        '<stop offset=".84" stop-color="#2A140A" stop-opacity=".13"/><stop offset="1" stop-color="#2A140A" stop-opacity="0"/></radialGradient>')
     p = ellipse(cx, cy, r, r * .8, rot)
     s = f'<g opacity="{op}"><path d="{p.d()}" fill="{g}"/>'
-    for k in (.38, .62):
+    for k in (.4, .66):
         q = ellipse(cx + r * .08, cy + r * .1, r * k, r * k * .78, rot)
-        s += f'<path d="{q.d()}" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="{f(max(.4, r * .07 * S()))}"/>'
+        s += f'<path d="{q.d()}" fill="none" stroke="#fff" stroke-opacity=".07" stroke-width="{f(max(.4, r * .06 * S()))}"/>'
     emit(s + "</g>")
 
 
@@ -630,6 +678,11 @@ def sparkle(x, y, r, color="#FFE27A", op=1):
     clay(rpoly(pts, r * .08), color, depth=r * .2, shadow=False, opacity=op if op != 1 else None)
 
 
+def mark(name, x, y, r=None):
+    """Remember a point (in the current transform) for a json file; save() returns it in viewBox units."""
+    PG.marks[name] = (T(x, y), r * S() if r is not None else None)
+
+
 # ---------------------------------------------------------------- saving
 def svg_text(w, h, tx=0, ty=0, bg=None):
     body = "".join(PG.out)
@@ -640,8 +693,8 @@ def svg_text(w, h, tx=0, ty=0, bg=None):
 
 
 def save(rel, rest=False, margin=4, square=False, box=None, bottom=None, bg=None):
-    """Write the page to app/assets/art/<rel>. Returns (x0, y0, w, h): where the viewBox
-    sits in drawing units, so callers can turn drawing points into viewBox points.
+    """Write the page to app/assets/art/<rel>. Returns its width, height and the marked
+    points (mark()) in viewBox units.
     rest: the bottom edge is the lowest thing drawn (no margin), for things that stand.
     bottom: cut the picture flat at this y (customers behind the counter)."""
     if box is None:
@@ -667,4 +720,9 @@ def save(rel, rest=False, margin=4, square=False, box=None, bottom=None, bg=None
     out = ART / rel
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(svg_text(w, h, x0, y0, bg))
-    return x0, y0, w, h
+    marks = {}
+    for k, ((mx, my), r) in PG.marks.items():
+        marks[k] = {"x": round(mx - x0, 1), "y": round(my - y0, 1)}
+        if r is not None:
+            marks[k]["r"] = round(r, 1)
+    return {"width": w, "height": h, "marks": marks, "origin": (x0, y0)}

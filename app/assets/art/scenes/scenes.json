@@ -1,0 +1,16 @@
+{
+  "restaurant": {
+    "counterBack": 1280,
+    "counterTop": 1330,
+    "counterFront": 1400
+  },
+  "kitchen": {
+    "worktopBack": 814,
+    "worktopMiddle": 1340
+  },
+  "market": {
+    "tableTop": 960,
+    "cratesTop": 1060,
+    "ground": 1330
+  }
+}

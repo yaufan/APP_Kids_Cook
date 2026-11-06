@@ -1,0 +1,83 @@
+{
+  "crepe": {
+    "viewBox": {
+      "width": 325,
+      "height": 323
+    },
+    "center": {
+      "x": 159,
+      "y": 155
+    }
+  },
+  "batter_raw": {
+    "viewBox": {
+      "width": 326,
+      "height": 321
+    },
+    "center": {
+      "x": 163,
+      "y": 160
+    }
+  },
+  "batter_cooked": {
+    "viewBox": {
+      "width": 326,
+      "height": 321
+    },
+    "center": {
+      "x": 163,
+      "y": 160
+    }
+  },
+  "wrapper": {
+    "viewBox": {
+      "width": 267,
+      "height": 268
+    },
+    "center": {
+      "x": 131,
+      "y": 130
+    }
+  },
+  "wrapper_filled": {
+    "viewBox": {
+      "width": 267,
+      "height": 268
+    },
+    "center": {
+      "x": 131,
+      "y": 130
+    }
+  },
+  "skewer": {
+    "viewBox": {
+      "width": 98,
+      "height": 523
+    },
+    "slot1": {
+      "x": 47,
+      "y": 95,
+      "r": 38.0
+    },
+    "slot2": {
+      "x": 47,
+      "y": 179,
+      "r": 38.0
+    },
+    "slot3": {
+      "x": 47,
+      "y": 263,
+      "r": 38.0
+    },
+    "slot4": {
+      "x": 47,
+      "y": 347,
+      "r": 38.0
+    },
+    "slot5": {
+      "x": 47,
+      "y": 431,
+      "r": 38.0
+    }
+  }
+}
