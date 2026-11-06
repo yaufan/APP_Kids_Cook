@@ -6,8 +6,13 @@
 - 和「[畫畫小鎮](https://github.com/yaufan/APP_Kids_Paint)」「[字母寵物](https://github.com/yaufan/APP_Kids_Paint_for_learning_writing)」是兄弟 APP：同一個作者、同一套技術；畫風是黏土風。
 - 不連網、不定位、沒有廣告、不賣東西給小朋友、沒有帳號。
 
+## 下載（Android）
+- 最新版：[Releases](https://github.com/yaufan/APP_Kids_Cook/releases/latest)，一般手機下載 `animal-restaurant-版本-arm64.apk`。
+- 用手機掃描 [docs/download-qr.png](docs/download-qr.png)。
+
 ## 目前進度
-- 0.1 開發中：餐廳、五道菜（三明治、水果串、蛋餅、珍珠奶茶、水餃）、做菜小遊戲、食譜書、家長模式、音樂和音效。
+- 0.1.0（測試版，2026-11-06）：餐廳、五道菜（三明治、水果串、蛋餅、珍珠奶茶、水餃）、做菜小遊戲、食譜書、家長模式、音樂和音效。
+- 版本紀錄：[CHANGELOG.md](CHANGELOG.md)。
 
 ## 程式
 - `app/`：Flutter 程式（Android 和 iOS）。
