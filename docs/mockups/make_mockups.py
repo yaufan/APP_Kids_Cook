@@ -1,4 +1,4 @@
-"""Design-stage sketches for the cooking game (小廚師).
+"""Design-stage sketches for the cooking game (name not decided yet).
 
     python3 make_mockups.py        # writes docs/mockups/*.png (needs Node.js and Playwright)
 
@@ -113,10 +113,10 @@ def cf(size="m", shadow=True, wide=False, rot=0):
     rot: how much the piece is turned, so the light still comes from the top left of the screen."""
     b = CLAY[size]
     k = f"cf-{size}-{int(shadow)}{int(wide)}" + (f"_r{rot}" if rot else "")
-    az = 225 - rot
+    az = (225 - rot) % 360
     ca, sa = math.cos(math.radians(-rot)), math.sin(math.radians(-rot))
     sdx, sdy = b * .3 * ca - b * .75 * sa, b * .3 * sa + b * .75 * ca
-    nz = {"xs": 0, "s": .012, "m": .018, "l": .016, "xl": .011}[size]
+    nz = {"xs": 0, "s": .012, "m": .016, "l": .012, "xl": .006}[size]
     nf = min(.09, .62 / b)
     bump = (f'<feTurbulence type="fractalNoise" baseFrequency="{nf:.3f}" numOctaves="2" seed="4" result="n"/>'
             f'<feComposite in="b0" in2="n" operator="arithmetic" k2="0.86" k3="{nz}" result="b"/>') if nz else '<feOffset in="b0" result="b"/>'
@@ -190,6 +190,8 @@ def _respin(m, rot):
 def G(inner, x=0, y=0, s=1, rot=0, extra=""):
     if rot:
         inner = _REF.sub(lambda m: _respin(m, round(rot)), inner)
+        if abs(rot) % 360 == 180:   # Chromium draws lighting filters dark when turned exactly half way round
+            rot = 179.5
     return f'<g transform="translate({x} {y}) rotate({rot}) scale({s})" {extra}>{inner}</g>'
 
 
@@ -542,18 +544,23 @@ TOAST = ("M -22 24 L -22 -6 C -31 -10 -31 -29 -14 -28 C -8 -35 8 -35 14 -28 C 31
 
 
 def sandwich(flag=True):
-    """Toast sandwich seen from above: cheese corners and 3 tomato slices peek out. About 76 wide, 80 tall."""
-    o = [cl("path", dk(CRUST, .08), f'd="{TOAST}" transform="translate(5 7) rotate(5)"', "m")]
-    for x, y in ((-25, 18), (27, 22), (2, 32)):
-        o.append(G(tomato_slice(13), x, y))
-    o.append(cl("rect", CHEESE, 'x="-27" y="-24" width="54" height="50" rx="5" transform="rotate(14)"', "m"))
-    o.append(cl("path", CRUST, f'd="{TOAST}"', "m"))
-    o.append(cl("path", CRUMB, f'd="{TOAST}" transform="translate(0 1.5) scale(.78)"', "s", shadow=False))
-    o.append(hl(-10, -17, 7, 3, -20, .6))
-    o.append(dent(8, 10, 5, 0, .8))
+    """Triangle toast sandwich (like the breakfast shop): the cut face shows bread, cheese, 3 tomato slices, bread.
+    About 104 wide, 100 tall (y -50..50)."""
+    o = [cl("path", CRUST, 'd="M -48 4 L 8 -44 L 48 4 Z" stroke="{c}" stroke-width="8" stroke-linejoin="round"'.format(c=CRUST), "m"),
+         cl("path", CRUMB, 'd="M -38 3 L 8 -35 L 38 3 Z" stroke="{c}" stroke-width="6" stroke-linejoin="round"'.format(c=CRUMB), "s", shadow=False),
+         hl(-6, -16, 9, 3, -40, .55),
+         dent(16, -10, 6, 0, .7)]
+    o.append(cl("rect", CRUST, 'x="-52" y="0" width="104" height="50" rx="10"', "m"))
+    o.append(cl("rect", CRUMB, 'x="-46" y="3" width="92" height="13" rx="4"', "xs", shadow=False))
+    o.append(cl("rect", CRUMB, 'x="-46" y="31" width="92" height="13" rx="4"', "xs", shadow=False))
+    o.append(cl("rect", CHEESE, 'x="-50" y="15" width="100" height="6" rx="3"', "xs"))
+    o.append(cl("path", CHEESE, 'd="M 42 17 L 56 17 Q 57 33 51 33 Q 47 33 47 24 Z"', "xs"))
+    for x in (-32, 0, 32):
+        o.append(cl("ellipse", TOMATO, f'cx="{x}" cy="26" rx="18" ry="5.6"', "xs"))
+        o.append(f'<ellipse cx="{x}" cy="25.5" rx="11" ry="2.4" fill="#FF9A85" opacity=".85"/>')
     if flag:
-        o.append(cl("rect", "#F3E2C4", 'x="-1.5" y="-46" width="3" height="40" rx="1.5"', "xs"))
-        o.append(cl("path", "#4FA3E0", 'd="M 1.5 -46 L 18 -41 L 1.5 -35 Z" stroke="#4FA3E0" stroke-width="3" stroke-linejoin="round"', "xs"))
+        o.append(cl("rect", "#F3E2C4", 'x="6" y="-62" width="3" height="34" rx="1.5"', "xs"))
+        o.append(cl("path", "#4FA3E0", 'd="M 9 -62 L 25 -56.5 L 9 -51 Z" stroke="#4FA3E0" stroke-width="3" stroke-linejoin="round"', "xs"))
     return "".join(o)
 
 
@@ -573,7 +580,7 @@ def cabbage():
     o.append(cl("path", "#A9DC78", 'd="M -26 8 C -30 -22 -4 -30 6 -24 C -10 -14 -14 4 -6 26 C -16 24 -24 18 -26 8 Z"', "s"))
     o.append(cl("path", "#A9DC78", 'd="M 26 6 C 30 -20 10 -30 -2 -26 C 14 -14 16 6 6 26 C 16 24 24 16 26 6 Z"', "s"))
     o.append(cl("circle", "#D4F0A6", 'cx="0" cy="-2" r="13"', "s"))
-    o.append(f'<path d="M -16 14 Q -12 0 -16 -12 M 15 14 Q 11 0 15 -12" stroke="#EAF8CF" stroke-width="2" fill="none" opacity=".8" stroke-linecap="round"/>')
+    o.append('<path d="M -16 14 Q -12 0 -16 -12 M 15 14 Q 11 0 15 -12" stroke="#EAF8CF" stroke-width="2" fill="none" opacity=".8" stroke-linecap="round"/>')
     o.append(hl(-12, -18, 6, 3.5, -30, .5))
     return "".join(o)
 
@@ -587,7 +594,7 @@ def knife(scale=1.0):
     o = [cl("rect", "#5BBE7A", 'x="-11" y="-62" width="22" height="50" rx="11"', "m"),
          cl("circle", lt("#5BBE7A", .4), 'cx="0" cy="-50" r="4"', "xs", shadow=False, inv=True),
          cl("path", "#D8E8F4", 'd="M -10 -12 L 10 -12 L 12 44 C 12 62 -12 64 -12 44 Z"', "m"),
-         f'<path d="M 11 -6 ' + " ".join(f"l -2.4 3.5 l 2.4 3.5" for _ in range(6)) + '" fill="none" stroke="#B9CDDD" stroke-width="1.6" stroke-linejoin="round"/>',
+         '<path d="M 11 -6 ' + " ".join("l -2.4 3.5 l 2.4 3.5" for _ in range(6)) + '" fill="none" stroke="#B9CDDD" stroke-width="1.6" stroke-linejoin="round"/>',
          hl(-4, 14, 2.5, 18, 0, .55)]
     return G("".join(o), s=scale)
 
@@ -782,8 +789,8 @@ def screen_order():
     o.append(cl("ellipse", "#F1ECE4", 'cx="54" cy="604" rx="26" ry="5.5"', "xs", shadow=False, inv=True))
     # order bubble (pictures only)
     o.append(speech_bubble(22, 112, 346, 214, 196, 344))
-    o.append(G(sandwich(), 195, 186, 1.2))
-    o.append(f'<rect x="44" y="244" width="302" height="2" rx="1" fill="#EADFD2"/>')
+    o.append(G(sandwich(), 195, 186, 1.1))
+    o.append('<rect x="44" y="249" width="302" height="2" rx="1" fill="#EADFD2"/>')
     o.append(G(bread_slice(), 66, 287, .82))
     o.append(plus(110, 287, 8))
     o.append(G(cheese_slice(), 152, 287, .85))
@@ -817,7 +824,7 @@ def foam(lst):
 
 
 def hands_bubbles():
-    o = [G(kid_hand(-1), -19, 8, 1.15, -16), G(kid_hand(1), 19, 8, 1.15, 16)]
+    o = [G(kid_hand(-1), -22, 8, 1.15, -14), G(kid_hand(1), 22, 8, 1.15, 14)]
     o.append(foam([(-6, -6, 7), (2, -12, 8), (8, -2, 6), (-2, 4, 6), (-24, -16, 5), (24, -14, 5)]))
     o.append(bubbles([(-30, -34, 9), (0, -44, 12), (28, -30, 8), (-8, 6, 7), (40, 4, 6), (-40, 0, 5), (16, -14, 5)]))
     return "".join(o)
@@ -837,7 +844,7 @@ def wash_tomato():
     o = [cl("rect", "#AEB7C2", 'x="-46" y="-56" width="30" height="16" rx="7"', "s"),
          cl("path", "#AEB7C2", 'd="M -24 -56 L 6 -56 Q 22 -56 22 -40 L 22 -30 L 8 -30 L 8 -38 Q 8 -42 4 -42 L -24 -42 Z"', "m"),
          cl("rect", "#E8573F", 'x="-38" y="-66" width="12" height="10" rx="4"', "xs")]
-    o.append(f'<path d="M 15 -30 C 11 -18 19 -8 15 6" stroke="#8FD3F5" stroke-width="10" stroke-linecap="round" fill="none" opacity=".75"/>')
+    o.append('<path d="M 15 -30 C 11 -18 19 -8 15 6" stroke="#8FD3F5" stroke-width="10" stroke-linecap="round" fill="none" opacity=".75"/>')
     o.append(G(tomato("clay"), 12, 26, .55))
     o.append(bubbles([(-14, 14, 6), (36, 20, 7), (30, 0, 4), (-10, -6, 4)]))
     for x, y in ((-6, 46), (34, 44), (-18, 30)):
@@ -857,9 +864,9 @@ def cut_tomato_icon():
 
 def stack_icon():
     o = [G(cl("rect", CRUST, 'x="-40" y="-8" width="80" height="16" rx="8"', "s"), 0, 40)]
-    o.append(G(cl("rect", CHEESE, 'x="-36" y="-6" width="72" height="12" rx="4"', "s"), 0, 18))
     for x in (-22, 0, 22):
-        o.append(cl("ellipse", TOMATO, f'cx="{x}" cy="0" rx="12" ry="6"', "xs"))
+        o.append(cl("ellipse", TOMATO, f'cx="{x}" cy="19" rx="12" ry="6"', "xs"))
+    o.append(G(cl("rect", CHEESE, 'x="-36" y="-6" width="72" height="12" rx="4"', "s"), 0, 0))
     o.append(G(cl("rect", CRUST, 'x="-40" y="-9" width="80" height="18" rx="8"', "s")
                + cl("rect", CRUMB, 'x="-34" y="-6" width="68" height="6" rx="3"', "xs", shadow=False), 0, -22))
     o.append(cw("M 52 -30 V 28", "#FFB23F", 6, "xs", box=(44, -36, 16, 70)))
@@ -872,7 +879,7 @@ def screen_recipe():
     o.append(back_btn())
     o.append(title_chip("食譜", icon=G(book_icon(), 0, 0, .7)))
     o.append(cl("rect", CREAM, 'x="14" y="84" width="362" height="652" rx="34"', "xl"))
-    o.append(G(sandwich(flag=False), 195, 160, 1.25))
+    o.append(G(sandwich(flag=False), 195, 160, 1.2))
     o.append(tx(195, 252, "番茄起司三明治", 22, INK))
     steps = [("洗手", hands_bubbles, "done"), ("洗番茄", wash_tomato, "now"), ("切番茄", cut_tomato_icon, ""), ("疊起來", stack_icon, "")]
     for i, (label, pic, state) in enumerate(steps):
@@ -914,28 +921,28 @@ def screen_cut():
     o.append(cl("rect", dk(WOOD, .2), 'x="180" y="236" width="30" height="14" rx="7"', "xs", shadow=False, inv=True))
     o.append(wood_grooves(40, 280, 310, 390, 9, seed=8))
     # tomato with its right side cut off
-    D.add("cut3", '<clipPath id="cut3"><rect x="-80" y="-80" width="118" height="160"/></clipPath>')
+    D.add("cut3", '<clipPath id="cut3"><rect x="-80" y="-80" width="124" height="160"/></clipPath>')
     body = cl("path", TOMATO, f'd="{TOMATO_BODY}"', "l")
-    cutface = (cl("ellipse", "#F65E4C", 'cx="38" cy="5" rx="8" ry="40"', "s", shadow=False)
-               + cl("ellipse", "#FF9A85", 'cx="38.5" cy="5" rx="4.5" ry="33"', "xs", shadow=False)
-               + "".join(cl("ellipse", "#FFD0B5", f'cx="38.5" cy="{yy}" rx="2.4" ry="6"', "xs", shadow=False) for yy in (-16, 5, 26)))
+    cutface = (cl("ellipse", "#F65E4C", 'cx="44" cy="6" rx="7" ry="34"', "s", shadow=False)
+               + cl("ellipse", "#FF9A85", 'cx="44.5" cy="6" rx="4" ry="28"', "xs", shadow=False)
+               + "".join(cl("ellipse", "#FFD0B5", f'cx="44.5" cy="{yy}" rx="2.2" ry="5"', "xs", shadow=False) for yy in (-12, 6, 24)))
     tom = f'<g clip-path="url(#cut3)">{body}{hl(-26, -12, 10, 6, -40, .5)}{dent(-20, 22, 8, 10, .8)}</g>{cutface}'
     leaves = "".join(f'<ellipse cx="{math.cos(math.radians(a)) * 11:.1f}" cy="{-35 + math.sin(math.radians(a)) * 6:.1f}" rx="12.5" ry="5.2" '
                      f'fill="{cg(LEAF)}" transform="rotate({a} {math.cos(math.radians(a)) * 11:.1f} {-35 + math.sin(math.radians(a)) * 6:.1f})"/>' for a in (-54, 18, 90, 162, 234))
     tom += clg(leaves, "s") + cl("rect", STEM, 'x="-3.5" y="-52" width="7" height="15" rx="3.5"', "xs")
     o.append(G(tom, 148, 470, 1.7))
     # two slices lying aside
-    o.append(G(tomato_slice(36), 302, 420))
-    o.append(G(tomato_slice(36), 310, 515))
+    o.append(G(tomato_slice(34), 314, 420))
+    o.append(G(tomato_slice(34), 318, 512))
     # dashed swipe line
-    o.append(f'<line x1="198" y1="330" x2="198" y2="612" stroke="{INK}" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18" opacity=".14" transform="translate(1.5 2)"/>')
-    o.append(f'<line x1="198" y1="330" x2="198" y2="612" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18"/>')
+    o.append(f'<line x1="188" y1="330" x2="188" y2="612" stroke="{INK}" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18" opacity=".14" transform="translate(1.5 2)"/>')
+    o.append('<line x1="188" y1="330" x2="188" y2="612" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18"/>')
     # knife at the top of the line
-    o.append(G(knife(), 198, 266, .9, -6))
+    o.append(G(knife(), 188, 266, .9, -6))
     # hint finger and arrow showing the swipe goes down
-    o.append(cw("M 238 404 V 540", "#FFFFFF", 7, "xs", box=(228, 394, 20, 156)))
-    o.append(cl("path", "#FFFFFF", 'd="M 226 534 L 250 534 L 238 552 Z" stroke="#fff" stroke-width="6" stroke-linejoin="round"', "xs"))
-    o.append(G(pointer_hand(180, .8), 238, 396))
+    o.append(cw("M 252 404 V 540", "#FFFFFF", 7, "xs", box=(242, 394, 20, 156)))
+    o.append(cl("path", "#FFFFFF", 'd="M 240 534 L 264 534 L 252 552 Z" stroke="#fff" stroke-width="6" stroke-linejoin="round"', "xs"))
+    o.append(G(pointer_hand(180, .8), 252, 396))
     # plate with bread and cheese waiting
     o.append(cl("ellipse", "#FFFFFF", 'cx="195" cy="770" rx="96" ry="44"', "l"))
     o.append(cl("ellipse", "#F2ECE3", 'cx="195" cy="768" rx="68" ry="28"', "s", shadow=False, inv=True))
@@ -948,9 +955,11 @@ def pancake():
     r = random.Random(4)
     o = [cl("circle", "#F2CB80", 'r="94"', "l")]
     o.append(f'<circle r="88" fill="none" stroke="#D99A45" stroke-width="8" opacity=".4" filter="{blur(4)}"/>')
-    o.append(f'<path d="M -62 -30 C -50 -70 10 -76 44 -54 C 76 -34 74 10 60 36 C 42 70 -10 74 -40 56 C -70 36 -74 0 -62 -30 Z" fill="#FFE07A" opacity=".85" filter="{blur(5)}"/>')
-    for x, y, rx, ry, a in ((-24, -20, 26, 15, 20), (22, 14, 22, 13, -30), (-6, 36, 18, 10, 10), (30, -36, 14, 8, 40)):
-        o.append(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="#FFF3B8" opacity=".8" transform="rotate({a} {x} {y})" filter="{blur(4)}"/>')
+    o.append(f'<path d="M -62 -30 C -50 -70 10 -76 44 -54 C 76 -34 74 10 60 36 C 42 70 -10 74 -40 56 C -70 36 -74 0 -62 -30 Z" fill="#FFDB5C" opacity=".9" filter="{blur(5)}"/>')
+    for x, y, rx, ry, a in ((-24, -20, 24, 13, 20), (22, 14, 20, 11, -30), (-6, 38, 16, 9, 10), (30, -36, 13, 7, 40), (-46, 14, 10, 7, 60)):
+        o.append(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="#FFF8DC" opacity=".9" transform="rotate({a} {x} {y})" filter="{blur(3.5)}"/>')
+    for x, y, rx, ry in ((6, -10, 12, 8), (-30, 30, 10, 6), (44, -12, 9, 6)):
+        o.append(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="#FFB52E" opacity=".55" filter="{blur(3)}"/>')
     for _ in range(10):
         a, d = r.uniform(0, 6.28), r.uniform(55, 84)
         o.append(f'<circle cx="{math.cos(a) * d:.0f}" cy="{math.sin(a) * d:.0f}" r="{r.uniform(4, 8):.1f}" fill="#C98535" opacity=".22" filter="{blur(2.5)}"/>')
@@ -1001,9 +1010,8 @@ def screen_pancake():
     o = [tiles_bg("#FFEFD9", 0, 130)]
     o.append(f'<rect x="0" y="120" width="{W}" height="{H - 120}" fill="#E9D3B8"/>')
     o.append(back_btn())
-    dish = (cl("ellipse", "#FFFFFF", 'cy="4" rx="22" ry="9"', "s")
-            + "".join(cl("rect", "#F2CB80", f'x="{x - 6}" y="-10" width="12" height="14" rx="5"', "xs")
-                      + f'<path d="M {x - 2} -5 a 2.5 2.5 0 1 1 2 3" stroke="#D99A45" stroke-width="1.4" fill="none"/>' for x in (-13, 0, 13)))
+    dish = (cl("circle", PAN, 'r="16"', "s") + cl("circle", "#F2CB80", 'r="12"', "xs", shadow=False)
+            + "".join(f'<rect x="{x - 2}" y="{y - 1.2}" width="4" height="2.4" rx="1.2" fill="#4FA83A"/>' for x, y in ((-5, -4), (4, -6), (6, 3), (-3, 5), (0, 0))))
     o.append(title_chip("煎蛋餅", icon=dish))
     # stove top
     o.append(cl("rect", "#5B6068", 'x="10" y="96" width="370" height="620" rx="40"', "xl"))
@@ -1068,15 +1076,19 @@ def basket(items=True):
         o.append(G(carrot(), -42, -26, .8, -30) + G(carrot(), -22, -34, .8, -12))
         o.append(G(cabbage(), 12, -20, .8))
         o.append(G(egg(), 46, -14, .9) + G(egg(), 60, -24, .9) + G(egg(), 40, -32, .9))
-    o.append(cl("path", "#C98E55", 'd="M -86 -14 L 86 -14 L 72 60 Q 70 70 60 70 L -60 70 Q -70 70 -72 60 Z"', "l"))
+    body = "M -86 -14 L 86 -14 L 72 60 Q 70 70 60 70 L -60 70 Q -70 70 -72 60 Z"
+    o.append(cl("path", "#C98E55", f'd="{body}"', "l"))
+    D.add("basketclip", f'<clipPath id="basketclip"><path d="{body}" transform="translate(0 -1) scale(.94 .97)"/></clipPath>')
+    o.append('<g clip-path="url(#basketclip)">')
     for i, yy in enumerate((4, 20, 36, 52)):
-        half = 80 - i * 4
+        half = 90
         k = -half
         while k < half - 6:
             xx = k + (9 if i % 2 else 0)
             o.append(f'<rect x="{xx:.0f}" y="{yy - 6}" width="15" height="12" rx="6" fill="{dk("#C98E55", .22)}" opacity=".32"/>'
                      f'<rect x="{xx + 2:.0f}" y="{yy - 5}" width="10" height="4" rx="2" fill="#fff" opacity=".22"/>')
             k += 18
+    o.append('</g>')
     o.append(cl("rect", "#B9824A", 'x="-92" y="-22" width="184" height="18" rx="9"', "m"))
     return "".join(o)
 
@@ -1137,10 +1149,22 @@ def rice():
     lumps = "".join(f'<circle cx="{x}" cy="{y}" r="{rr}" fill="{cg("#FFFDF7")}"/>' for x, y, rr in
                     ((-18, 4, 16), (0, -6, 19), (18, 4, 16), (-6, 10, 15), (10, 12, 14)))
     o = [clg(lumps, "m")]
-    for _ in range(22):
-        x, y = r.uniform(-26, 26), r.uniform(-18, 18)
-        if (x / 30) ** 2 + ((y - 2) / 22) ** 2 < 1:
-            o.append(f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="3" ry="1.6" fill="#EDE5D6" opacity=".9" transform="rotate({r.randint(0, 180)} {x:.1f} {y:.1f})"/>')
+    for _ in range(90):
+        x, y = r.uniform(-30, 30), r.uniform(-22, 24)
+        if (x / 31) ** 2 + ((y - 3) / 21) ** 2 < 1:
+            a = r.randint(0, 180)
+            o.append(f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="3.2" ry="1.7" fill="#E4D9C6" transform="rotate({a} {x:.1f} {y:.1f})"/>'
+                     f'<ellipse cx="{x - .5:.1f}" cy="{y - .5:.1f}" rx="2.6" ry="1.2" fill="#FFFFFF" transform="rotate({a} {x:.1f} {y:.1f})"/>')
+    return "".join(o)
+
+
+def corn():
+    o = [cl("ellipse", "#8BC34A", 'cx="-6" cy="12" rx="7" ry="20" transform="rotate(-25 -6 12)"', "s"),
+         cl("rect", "#FFD23F", 'x="-11" y="-26" width="22" height="48" rx="11"', "m")]
+    for yy in range(-20, 18, 6):
+        for xx in (-5, 0, 5):
+            o.append(f'<circle cx="{xx}" cy="{yy}" r="2.2" fill="#FFE98A" opacity=".9"/>')
+    o.append(cl("ellipse", "#9CD35A", 'cx="8" cy="14" rx="6" ry="18" transform="rotate(25 8 14)"', "s"))
     return "".join(o)
 
 
@@ -1229,7 +1253,7 @@ def screen_plate():
         return cx + d * math.cos(math.radians(a)), cy + d * math.sin(math.radians(a))
     # foods
     x, y = at(218, 70)
-    o.append(G(rice(), x, y, 1.15))
+    o.append(G(rice(), x + 8, y + 6, 1.1) + G(corn(), x - 34, y + 14, .72, -30))
     x, y = at(100, 66)
     o.append(G(broccoli(), x - 22, y - 4, .95) + G(broccoli(), x + 18, y + 4, .8) + G(carrot(False), x + 2, y + 34, .55, -80) + G(carrot(False), x - 30, y + 28, .5, -60))
     x, y = at(12, 74)
@@ -1276,7 +1300,6 @@ def contact_sheet(names):
 
 
 def render(html, out, w, h, scale):
-    global D
     with tempfile.TemporaryDirectory() as tmp:
         p = pathlib.Path(tmp) / "page.html"
         p.write_text(html)
@@ -1292,7 +1315,7 @@ def main():
         render(make(), HERE / f"{name}.png", W, H, 2)
         print(name)
     html, w, h = contact_sheet(list(SCREENS))
-    render(html, HERE / "contact_sheet.png", w, h, 1)
+    render(html, HERE / "contact_sheet.png", w, h, 1.5)
     print("done")
 
 
