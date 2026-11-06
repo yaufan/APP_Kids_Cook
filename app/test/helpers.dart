@@ -81,6 +81,8 @@ class TestApp {
 
   void go(String location) => app.container.read(routerProvider).go(location);
 
+  String get location => container.read(routerProvider).state.matchedLocation;
+
   TestApp get app => this;
 
   /// Lets the pictures load and the screen move on [ms] milliseconds.

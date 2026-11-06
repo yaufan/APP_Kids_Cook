@@ -100,5 +100,5 @@ abstract final class Strings {
   static const fullTest = '完整版（測試版的開關）';
   static const about = '關於';
   static String version(String v) => '動物小餐廳 $v';
-  static const privacy = '不連網、不定位、沒有廣告、沒有帳號。資料只存在這支手機裡。';
+  static const privacy = '不連網、不定位、沒有廣告、沒有帳號。資料不會傳給任何人，只存在這支手機（和家長自己帳號的手機備份）裡。';
 }

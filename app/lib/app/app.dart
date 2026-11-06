@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/providers.dart';
 import '../features/book/book_screen.dart';
 import '../features/kitchen/kitchen_screen.dart';
+import '../features/parent/parent_gate.dart';
 import '../features/parent/parent_screen.dart';
 import '../features/restaurant/restaurant_screen.dart';
 import 'strings.dart';
@@ -14,6 +15,9 @@ import 'theme.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/',
+    // Always start here, whatever page another app asks the phone to open.
+    overridePlatformDefaultLocation: true,
+    redirect: (_, state) => state.matchedLocation == '/parent' && !ParentPass.take() ? '/' : null,
     routes: [
       GoRoute(path: '/', builder: (_, _) => const RestaurantScreen()),
       GoRoute(path: '/kitchen', builder: (_, _) => const KitchenScreen()),
