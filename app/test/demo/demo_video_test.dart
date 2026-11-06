@@ -142,6 +142,9 @@ void main() {
     final rec = (await tester.runAsync(() => _Recorder.start(key)))!;
     final marks = <String>[];
     void mark(String name) => marks.add('$name $frameCount');
+    // The steps of the dish being made: the caption follows the step on the
+    // screen (the kitchen moves on by itself while the finger is still busy).
+    var showing = <CookStep>[];
     Future<void> frames(int n) async {
       for (var i = 0; i < n; i++) {
         frameCount++;
@@ -150,6 +153,12 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 15));
         });
         await tester.pump(const Duration(milliseconds: 1000 ~/ _fps));
+        for (final s in showing.reversed) {
+          if (find.text(s.zh).evaluate().isNotEmpty) {
+            caption.value = _about(s);
+            break;
+          }
+        }
       }
     }
 
@@ -270,11 +279,13 @@ void main() {
       mark(dish.id);
       await label(Strings.start);
       await seconds(1.2);
-      for (final step in order.stepsFor(Level.little)) {
+      showing = order.stepsFor(Level.little);
+      for (final step in showing) {
         caption.value = _about(step);
         await seconds(1.2);
         await play(step);
       }
+      showing = [];
       caption.value = '完成了！端給客人';
       await seconds(1.5);
       await label(Strings.serve);
