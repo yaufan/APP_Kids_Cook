@@ -83,11 +83,12 @@ class Game {
   factory Game.fromJson(Map<String, dynamic>? j) {
     if (j == null) return const Game();
     final cooked = j['cooked'];
+    int n(Object? o) => o is int && o >= 0 ? o : 0;
     return Game(
-      coins: j['coins'] as int? ?? 0,
-      stars: j['stars'] as int? ?? 0,
+      coins: n(j['coins']),
+      stars: n(j['stars']),
       cooked: {if (cooked is Map) for (final e in cooked.entries) if (e.key is String && e.value is int) e.key as String: e.value as int},
-      served: j['served'] as int? ?? 0,
+      served: n(j['served']),
       settings: Settings.fromJson(j['settings'] is Map ? (j['settings'] as Map).cast<String, dynamic>() : const {}),
     );
   }
