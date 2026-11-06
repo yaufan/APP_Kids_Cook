@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dishes.dart';
 import 'game.dart';
 import 'sounds.dart';
 import 'store.dart';
@@ -33,4 +34,28 @@ class GameNotifier extends Notifier<Game> {
   }
 
   void settings(Settings Function(Settings s) f) => change((g) => g.copyWith(settings: f(g.settings)));
+}
+
+/// The customer at the counter: their order, and whether it was served.
+class Visit {
+  const Visit(this.order, {this.served = false});
+
+  final Order order;
+  final bool served;
+}
+
+final visitProvider = NotifierProvider<VisitNotifier, Visit>(VisitNotifier.new);
+
+class VisitNotifier extends Notifier<Visit> {
+  @override
+  Visit build() => Visit(ref.read(gameProvider).nextOrder(ref.read(randomProvider)));
+
+  /// The dish went out: coins and a star.
+  void served(int coins) {
+    if (state.served) return;
+    ref.read(gameProvider.notifier).change((g) => g.servedDish(state.order.dish.id, coins));
+    state = Visit(state.order, served: true);
+  }
+
+  void next() => state = Visit(ref.read(gameProvider).nextOrder(ref.read(randomProvider), last: state.order.dish.id));
 }

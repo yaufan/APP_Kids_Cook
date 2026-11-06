@@ -65,7 +65,7 @@ class CookStep {
   /// What is said (and printed small under the picture).
   final String zh;
 
-  /// The thing being worked on (assets/art/<art>.svg).
+  /// The thing being worked on (`assets/art/<art>.svg`).
   final String art;
 
   /// Where things go (a bowl, a cup, a pot, a plate).
@@ -197,7 +197,7 @@ final dishes = <Dish>[
     steps: (n, level) => [
       CookStep(StepKind.tapIn, '舀 $n 匙珍珠', art: 'food/pearls', target: 'tools/cup', result: 'food/pearl', count: n, sfx: 'plop', en: 'pearls'),
       CookStep(StepKind.tapIn, '放 ${level == Level.little ? 2 : 4} 顆冰塊', art: 'food/ice', target: 'tools/cup', result: 'food/ice', count: level == Level.little ? 2 : 4, sfx: 'plop', en: 'ice'),
-      const CookStep(StepKind.pour, '倒茶，倒到線就放開', art: 'food/tea', target: 'tools/cup', sfx: 'pour', en: 'tea'),
+      const CookStep(StepKind.pour, '倒茶，倒到線就放開', art: 'tools/teapot', target: 'tools/cup', result: 'food/tea', sfx: 'pour', en: 'tea'),
       const CookStep(StepKind.rub, '搖一搖', art: 'tools/cup', sfx: 'shake'),
       const CookStep(StepKind.finish, '蓋上蓋子，插上吸管', art: 'tools/cup', target: 'tools/cup', sequence: ['tools/lid', 'tools/straw'], result: 'food/milk_tea', sfx: 'pop'),
     ],
