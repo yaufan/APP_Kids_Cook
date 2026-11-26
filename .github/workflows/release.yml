@@ -152,14 +152,15 @@ jobs:
             fi
           done
 
-      # Same check as the App workflow: no network, location or advertising ID.
+      # Same check as the App workflow: no network, location, advertising ID,
+      # camera, microphone, contacts or photos.
       - name: Check Android permissions
         run: |
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
           for apk in build/animal-restaurant-*.apk; do
             "$AAPT2" dump permissions "$apk" | tee -a permissions.txt
           done
-          if grep -E 'INTERNET|LOCATION|AD_ID' permissions.txt; then
+          if grep -E 'INTERNET|LOCATION|AD_ID|CAMERA|RECORD_AUDIO|READ_CONTACTS|READ_MEDIA_|READ_EXTERNAL_STORAGE' permissions.txt; then
             echo "::error::The APK asks for a permission the app promises not to use"
             exit 1
           fi

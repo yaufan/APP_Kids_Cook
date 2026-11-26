@@ -130,14 +130,15 @@ jobs:
           done
 
       # The privacy promise, checked on the real packages: no network, no
-      # location, no advertising ID (docs/design.md).
+      # location, no advertising ID, no camera, microphone, contacts or
+      # photos (docs/design.md).
       - name: Check Android permissions
         run: |
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
           for apk in build/animal-restaurant-*.apk; do
             "$AAPT2" dump permissions "$apk" | tee -a permissions.txt
           done
-          if grep -E 'INTERNET|LOCATION|AD_ID' permissions.txt; then
+          if grep -E 'INTERNET|LOCATION|AD_ID|CAMERA|RECORD_AUDIO|READ_CONTACTS|READ_MEDIA_|READ_EXTERNAL_STORAGE' permissions.txt; then
             echo "::error::The APK asks for a permission the app promises not to use"
             exit 1
           fi
