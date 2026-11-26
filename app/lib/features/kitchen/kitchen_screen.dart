@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/strings.dart';
 import '../../app/theme.dart';
@@ -14,7 +11,9 @@ import 'steps.dart';
 
 /// The kitchen: the recipe card's steps along the top, and the little game
 /// for the step being done; "叮" and the next. At the end the dish is
-/// ready to take out to the customer.
+/// ready to take out to the customer. A child who goes back to the
+/// restaurant mid-recipe comes back to the step they were on (the customer
+/// is still waiting for the same dish).
 class KitchenScreen extends ConsumerStatefulWidget {
   const KitchenScreen({super.key});
 
@@ -22,33 +21,45 @@ class KitchenScreen extends ConsumerStatefulWidget {
   ConsumerState<KitchenScreen> createState() => _KitchenScreenState();
 }
 
-class _KitchenScreenState extends ConsumerState<KitchenScreen> {
+class _KitchenScreenState extends ConsumerState<KitchenScreen> with HushOnLeave {
   late final Sounds _sounds;
+  late final Busy _busy;
   late final Order _order;
   late final List<CookStep> _steps;
   var _at = 0;
   var _ticked = false;
   var _finished = false;
+  Later? _next;
+
+  /// The last thing said: the next step waits for it ("剛剛好！", a count).
+  Future<void> _lastSaid = Future.value();
 
   @override
   void initState() {
     super.initState();
     _sounds = ref.read(soundsProvider);
     _sounds.hold(this, Music.cooking);
-    _order = ref.read(visitProvider).order;
+    // A dish is being made: when the play time is up, it is finished first.
+    _busy = ref.read(busyProvider)..start(this);
+    final visit = ref.read(visitProvider);
+    _order = visit.order;
     _steps = _order.stepsFor(ref.read(gameProvider).settings.level);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _announce());
+    // Back to where the child left off (all done: ready to serve).
+    _at = visit.at.clamp(0, _steps.length - 1);
+    _finished = visit.at >= _steps.length;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _finished ? _say(Strings.dishDone) : _announce());
   }
 
   @override
   void dispose() {
+    _next?.cancel();
+    _busy.end(this);
     _sounds.release(this);
     super.dispose();
   }
 
   void _say(String zh, {String? en}) {
-    final s = ref.read(gameProvider).settings;
-    if (mounted && s.voice) ref.read(voiceProvider).say(zh, en: s.english ? en : null);
+    if (mounted) _lastSaid = speak(ref, zh, en: en);
   }
 
   void _announce() {
@@ -60,7 +71,10 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
     if (!mounted || _ticked) return;
     _sounds.play('ding');
     setState(() => _ticked = true);
-    Timer(const Duration(milliseconds: 700), () {
+    // Remembered at once: going back now still keeps this step done.
+    ref.read(visitProvider.notifier).progress(_at + 1);
+    // The next step once what was just said (a count, 「剛剛好！」) is done.
+    _next = Later(const Duration(milliseconds: 700), after: _lastSaid, () {
       if (!mounted) return;
       if (_at + 1 < _steps.length) {
         setState(() {
@@ -78,7 +92,7 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
 
   void _serve() {
     ref.read(visitProvider.notifier).served(3 + _order.count);
-    context.pop();
+    goBack(context);
   }
 
   @override
@@ -92,7 +106,9 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
       done: _stepDone,
     );
     final step = _steps[_at];
-    return Scaffold(
+    return BackKey(
+        onBack: () => goBack(context),
+        child: Scaffold(
       body: Stack(children: [
         const Positioned.fill(child: Art('scenes/kitchen', fit: BoxFit.cover)),
         SafeArea(
@@ -100,7 +116,7 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
               child: Row(children: [
-                CornerButton(label: Strings.back, icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+                CornerButton(label: Strings.back, icon: Icons.arrow_back_rounded, onTap: () => goBack(context)),
                 const SizedBox(width: 8),
                 Expanded(child: _RecipeStrip(steps: _steps, at: _at, ticked: _ticked || _finished)),
               ]),
@@ -126,7 +142,7 @@ class _KitchenScreenState extends ConsumerState<KitchenScreen> {
         if (_ticked && !_finished)
           const IgnorePointer(child: Center(child: SizedBox(width: 150, height: 150, child: Art('ui/check')))),
       ]),
-    );
+    ));
   }
 }
 

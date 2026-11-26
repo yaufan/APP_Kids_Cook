@@ -54,12 +54,14 @@ class TestApp {
   Visit get visit => container.read(visitProvider);
   void change(Game Function(Game g) f) => container.read(gameProvider.notifier).change(f);
 
-  static Future<TestApp> start(WidgetTester tester, {Game game = const Game(), Size size = const Size(1080, 2340), double ratio = 2.75, String at = '/', int seed = 1}) async {
+  static Future<TestApp> start(WidgetTester tester,
+      {Game game = const Game(), Size size = const Size(1080, 2340), double ratio = 2.75, String at = '/', int seed = 1, RecordingVoice? voice, DateTime? now}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = ratio;
     addTearDown(tester.view.reset);
     final store = MemoryStore();
-    final app = TestApp(tester, store, RecordingSounds(), RecordingVoice());
+    final app = TestApp(tester, store, RecordingSounds(), voice ?? RecordingVoice());
+    if (now != null) app.now = now;
     await tester.pumpWidget(RepaintBoundary(
       key: shotKey,
       child: ProviderScope(
@@ -96,6 +98,32 @@ class TestApp {
   Future<void> tapLabel(String label, {int ms = 400}) async {
     await tester.tap(find.bySemanticsLabel(label).first);
     await settle(ms);
+  }
+
+  /// The app goes to the background (home key), and comes back.
+  void hide() {
+    for (final s in [AppLifecycleState.inactive, AppLifecycleState.hidden, AppLifecycleState.paused]) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+    }
+  }
+
+  void show() {
+    for (final s in [AppLifecycleState.hidden, AppLifecycleState.inactive, AppLifecycleState.resumed]) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+    }
+  }
+
+  /// Answers the parent gate on screen right.
+  Future<void> answerGate() async {
+    final question = tester.widget<Text>(find.textContaining('等於多少')).data!;
+    const zh = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    final parts = RegExp(r'(\S) 加 (\S)').firstMatch(question)!;
+    final answer = zh.indexOf(parts.group(1)!) + zh.indexOf(parts.group(2)!);
+    for (final d in '$answer'.split('')) {
+      await tester.tap(find.byKey(ValueKey('gate-key-$d')));
+      await tester.pump();
+    }
+    await settle(800);
   }
 
   Future<void> end() async {

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/strings.dart';
 import '../../app/theme.dart';
 import '../../app/version.dart';
+import '../../app/widgets.dart';
 import '../../core/dishes.dart';
+import '../../core/game.dart';
 import '../../core/providers.dart';
 
 /// Parent mode (after the gate): how it is going, the settings, and real
@@ -38,12 +39,14 @@ class ParentScreen extends ConsumerWidget {
     Widget toggle(String label, bool value, void Function(bool) set, {Key? key}) =>
         SwitchListTile(key: key, contentPadding: EdgeInsets.zero, title: Text(label, style: const TextStyle(fontSize: 17)), value: value, onChanged: set);
 
-    return Scaffold(
+    return BackKey(
+        onBack: () => goBack(context),
+        child: Scaffold(
       backgroundColor: Clay.parentBg,
       appBar: AppBar(
         backgroundColor: Clay.parentBg,
         title: const Text(Strings.parentTitle),
-        leading: IconButton(icon: const Icon(Icons.close_rounded), tooltip: Strings.back, onPressed: () => context.pop()),
+        leading: IconButton(icon: const Icon(Icons.close_rounded), tooltip: Strings.back, onPressed: () => goBack(context)),
       ),
       body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
         section(Strings.progress, [
@@ -67,6 +70,20 @@ class ParentScreen extends ConsumerWidget {
             ]),
           ),
           toggle(Strings.english, s.english, (v) => game.settings((x) => x.copyWith(english: v)), key: const ValueKey('english')),
+        ]),
+        section(Strings.playTime, [
+          Wrap(spacing: 8, children: [
+            for (final m in Settings.minuteChoices)
+              ChoiceChip(
+                key: ValueKey('minutes-$m'),
+                label: Text(Strings.minutes(m), style: const TextStyle(fontSize: 16)),
+                selected: s.minutes == m,
+                onSelected: (_) => game.settings((x) => x.copyWith(minutes: m)),
+              ),
+          ]),
+          const SizedBox(height: 8),
+          const Text(Strings.playTimeNote, style: TextStyle(fontSize: 13, height: 1.5, color: Clay.inkSoft)),
+          const SizedBox(height: 6),
         ]),
         section(Strings.sound, [
           toggle(Strings.music, s.music, (v) => game.settings((x) => x.copyWith(music: v)), key: const ValueKey('music')),
@@ -96,6 +113,6 @@ class ParentScreen extends ConsumerWidget {
           const SizedBox(height: 8),
         ]),
       ]),
-    );
+    ));
   }
 }

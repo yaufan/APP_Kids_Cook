@@ -1,11 +1,119 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/providers.dart';
+import '../core/speech.dart';
+import '../core/voice.dart';
 import 'theme.dart';
+
+/// The screen that spoke last (its WidgetRef), so a screen going away
+/// hushes only its own line, never the next screen's first one.
+Object? _speaker;
+
+/// Says [zh] out loud (numbers as people say them: [spoken]), then [en] if
+/// the parent turned English on; only if the parent left the voice on and
+/// the app is in sight. Completes when it has been said (or cut off by the
+/// next line).
+Future<void> speak(WidgetRef ref, String zh, {String? en}) {
+  final s = ref.read(gameProvider).settings;
+  if (!s.voice || ref.read(hiddenProvider)) return Future.value();
+  _speaker = ref;
+  return ref.read(voiceProvider).say(spoken(zh), en: s.english && en != null && en.isNotEmpty ? en : null);
+}
+
+/// A screen that stops its own voice when the child leaves it, so a line
+/// does not go on over the next screen (and never cuts off the next
+/// screen's first line).
+mixin HushOnLeave<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+  late final Voice _hush;
+  late final Object _me;
+
+  @override
+  void initState() {
+    super.initState();
+    _hush = ref.read(voiceProvider);
+    _me = ref;
+  }
+
+  @override
+  void dispose() {
+    if (identical(_speaker, _me)) {
+      _speaker = null;
+      _hush.stop();
+    }
+    super.dispose();
+  }
+}
+
+/// Runs [then] after [min], and not before the line [after] has been said
+/// (at most [atMost] of waiting for it), so a slow voice is not cut off by
+/// the next line; [cancel] stops it.
+class Later {
+  Later(Duration min, VoidCallback then, {Future<void>? after, Duration atMost = const Duration(seconds: 10)}) : _then = then {
+    _timer = Timer(min, () {
+      _timeUp = true;
+      _fire();
+    });
+    if (after == null) {
+      _heard = true;
+    } else {
+      after.timeout(atMost).then((_) => _hear(), onError: (_) => _hear());
+    }
+  }
+
+  final VoidCallback _then;
+  late final Timer _timer;
+  var _timeUp = false, _heard = false, _over = false;
+
+  void _hear() {
+    _heard = true;
+    _fire();
+  }
+
+  void _fire() {
+    if (_over || !_timeUp || !_heard) return;
+    _over = true;
+    _then();
+  }
+
+  void cancel() {
+    _over = true;
+    _timer.cancel();
+  }
+}
+
+/// Back from a screen opened from the restaurant: where its own back button
+/// goes (the screen below, or the restaurant).
+void goBack(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go('/');
+  }
+}
+
+/// The phone's back key or gesture goes where [onBack] goes (the screen's
+/// own back button), never out of the app; with no [onBack] it does nothing.
+class BackKey extends StatelessWidget {
+  const BackKey({super.key, required this.child, this.onBack});
+
+  final Widget child;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) onBack?.call();
+        },
+        child: child,
+      );
+}
 
 /// A picture from assets/art/.
 class Art extends StatelessWidget {

@@ -87,6 +87,29 @@ class _Bits extends CustomPainter {
   bool shouldRepaint(_Bits old) => true;
 }
 
+/// Only the first finger on a step counts: a palm or a second finger does
+/// nothing (they used to start a second pouring sound that never stopped,
+/// cut a stray slice or end a cut half way).
+mixin _OneFinger<T extends StatefulWidget> on State<T> {
+  int? _finger;
+
+  /// A finger down: whether it is the one that counts.
+  bool fingerDown(PointerDownEvent e) {
+    if (_finger != null) return false;
+    _finger = e.pointer;
+    return true;
+  }
+
+  bool isFinger(PointerEvent e) => e.pointer == _finger;
+
+  /// A finger up or cancelled: whether it was the one that counted.
+  bool fingerUp(PointerEvent e) {
+    if (e.pointer != _finger) return false;
+    _finger = null;
+    return true;
+  }
+}
+
 /// A small helper: a ticking clock in seconds for step animations.
 mixin _Clock<T extends StatefulWidget> on State<T>, TickerProviderStateMixin<T> {
   late final AnimationController clock = AnimationController(vsync: this, duration: const Duration(days: 1))..forward();
@@ -111,7 +134,7 @@ class RubStep extends StatefulWidget {
   State<RubStep> createState() => _RubStepState();
 }
 
-class _RubStepState extends State<RubStep> with TickerProviderStateMixin, _Clock {
+class _RubStepState extends State<RubStep> with TickerProviderStateMixin, _Clock, _OneFinger {
   double _rubbed = 0, _sinceSound = 0;
   Offset? _last;
   final _bits = <(Offset, double, bool)>[];
@@ -150,9 +173,18 @@ class _RubStepState extends State<RubStep> with TickerProviderStateMixin, _Clock
       final size = math.min(box.maxWidth * 0.62, box.maxHeight * 0.55);
       return Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (e) => _last = e.localPosition,
-        onPointerMove: (e) => _move(e.localPosition),
-        onPointerUp: (_) => _last = null,
+        onPointerDown: (e) {
+          if (fingerDown(e)) _last = e.localPosition;
+        },
+        onPointerMove: (e) {
+          if (isFinger(e)) _move(e.localPosition);
+        },
+        onPointerUp: (e) {
+          if (fingerUp(e)) _last = null;
+        },
+        onPointerCancel: (e) {
+          if (fingerUp(e)) _last = null;
+        },
         child: AnimatedBuilder(
           animation: clock,
           builder: (context, _) => Stack(children: [
@@ -186,7 +218,7 @@ class CutStep extends StatefulWidget {
   State<CutStep> createState() => _CutStepState();
 }
 
-class _CutStepState extends State<CutStep> {
+class _CutStepState extends State<CutStep> with _OneFinger {
   final _cut = <int>{};
   Offset? _start;
   Rect _item = Rect.zero;
@@ -237,9 +269,18 @@ class _CutStepState extends State<CutStep> {
       _item = Rect.fromCenter(center: board.center, width: s, height: s);
       return Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (e) => _start = e.localPosition,
-        onPointerMove: (e) => _check(e.localPosition),
-        onPointerUp: (_) => _start = null,
+        onPointerDown: (e) {
+          if (fingerDown(e)) _start = e.localPosition;
+        },
+        onPointerMove: (e) {
+          if (isFinger(e)) _check(e.localPosition);
+        },
+        onPointerUp: (e) {
+          if (fingerUp(e)) _start = null;
+        },
+        onPointerCancel: (e) {
+          if (fingerUp(e)) _start = null;
+        },
         child: Stack(children: [
           if (step.target.isNotEmpty) Positioned.fromRect(rect: board, child: Art(step.target, fit: BoxFit.fill)),
           Positioned.fromRect(
@@ -404,7 +445,7 @@ class StirStep extends StatefulWidget {
   State<StirStep> createState() => _StirStepState();
 }
 
-class _StirStepState extends State<StirStep> {
+class _StirStepState extends State<StirStep> with _OneFinger {
   double _turned = 0, _sinceSound = 0;
   double? _angle;
   Offset _center = Offset.zero;
@@ -441,8 +482,14 @@ class _StirStepState extends State<StirStep> {
         _center = Offset(box.maxWidth / 2, box.maxHeight * 0.45);
         return Listener(
           behavior: HitTestBehavior.opaque,
-          onPointerDown: (e) => _angle = null,
-          onPointerMove: (e) => _move(e.localPosition),
+          onPointerDown: (e) {
+            if (fingerDown(e)) _angle = null;
+          },
+          onPointerMove: (e) {
+            if (isFinger(e)) _move(e.localPosition);
+          },
+          onPointerUp: fingerUp,
+          onPointerCancel: fingerUp,
           child: Stack(children: [
             Positioned(
               left: _center.dx - s / 2,
@@ -502,7 +549,7 @@ class PourStep extends StatefulWidget {
   State<PourStep> createState() => _PourStepState();
 }
 
-class _PourStepState extends State<PourStep> with TickerProviderStateMixin, _Clock {
+class _PourStepState extends State<PourStep> with TickerProviderStateMixin, _Clock, _OneFinger {
   double _level = 0;
   double? _pouringSince;
   double _from = 0;
@@ -522,6 +569,7 @@ class _PourStepState extends State<PourStep> with TickerProviderStateMixin, _Clo
     _from = _level;
     _pouringSince = t;
     widget.env.play(widget.step.sfx);
+    _sound?.cancel();
     _sound = Timer.periodic(const Duration(milliseconds: 1100), (_) => widget.env.play(widget.step.sfx));
   }
 
@@ -547,9 +595,15 @@ class _PourStepState extends State<PourStep> with TickerProviderStateMixin, _Clo
       final source = Rect.fromCenter(center: Offset(w * 0.72, h * 0.22), width: w * 0.36, height: w * 0.36);
       return Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (_) => _down(),
-        onPointerUp: (_) => _up(),
-        onPointerCancel: (_) => _up(),
+        onPointerDown: (e) {
+          if (fingerDown(e)) _down();
+        },
+        onPointerUp: (e) {
+          if (fingerUp(e)) _up();
+        },
+        onPointerCancel: (e) {
+          if (fingerUp(e)) _up();
+        },
         child: AnimatedBuilder(
           animation: clock,
           builder: (context, _) {
@@ -616,7 +670,7 @@ class CookPanStep extends StatefulWidget {
   State<CookPanStep> createState() => _CookPanStepState();
 }
 
-class _CookPanStepState extends State<CookPanStep> with TickerProviderStateMixin, _Clock {
+class _CookPanStepState extends State<CookPanStep> with TickerProviderStateMixin, _Clock, _OneFinger {
   Offset? _start;
   double? _flippedAt;
   Timer? _sizzle;
@@ -663,8 +717,14 @@ class _CookPanStepState extends State<CookPanStep> with TickerProviderStateMixin
       final food = Rect.fromCenter(center: pan.center + Offset(-pan.width * 0.08, 0), width: pan.width * 0.6, height: pan.width * 0.6);
       return Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (e) => _start = e.localPosition,
-        onPointerMove: (e) => _swipe(e.localPosition),
+        onPointerDown: (e) {
+          if (fingerDown(e)) _start = e.localPosition;
+        },
+        onPointerMove: (e) {
+          if (isFinger(e)) _swipe(e.localPosition);
+        },
+        onPointerUp: fingerUp,
+        onPointerCancel: fingerUp,
         child: AnimatedBuilder(
           animation: clock,
           builder: (context, _) {
@@ -1243,7 +1303,7 @@ class RollStep extends StatefulWidget {
   State<RollStep> createState() => _RollStepState();
 }
 
-class _RollStepState extends State<RollStep> with TickerProviderStateMixin {
+class _RollStepState extends State<RollStep> with TickerProviderStateMixin, _OneFinger {
   late final _roll = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
   Offset? _start;
 
@@ -1266,8 +1326,14 @@ class _RollStepState extends State<RollStep> with TickerProviderStateMixin {
         final s = math.min(box.maxWidth * 0.75, box.maxHeight * 0.6);
         return Listener(
           behavior: HitTestBehavior.opaque,
-          onPointerDown: (e) => _start = e.localPosition,
-          onPointerMove: (e) => _move(e.localPosition),
+          onPointerDown: (e) {
+            if (fingerDown(e)) _start = e.localPosition;
+          },
+          onPointerMove: (e) {
+            if (isFinger(e)) _move(e.localPosition);
+          },
+          onPointerUp: fingerUp,
+          onPointerCancel: fingerUp,
           child: Center(
             child: AnimatedBuilder(
               animation: _roll,

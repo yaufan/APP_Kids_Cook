@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/strings.dart';
 import '../../app/theme.dart';
@@ -18,7 +17,7 @@ class BookScreen extends ConsumerStatefulWidget {
   ConsumerState<BookScreen> createState() => _BookScreenState();
 }
 
-class _BookScreenState extends ConsumerState<BookScreen> {
+class _BookScreenState extends ConsumerState<BookScreen> with HushOnLeave {
   late final Sounds _sounds;
   Dish? _open;
 
@@ -39,22 +38,23 @@ class _BookScreenState extends ConsumerState<BookScreen> {
   void _tap(Dish d) {
     _sounds.play('open');
     setState(() => _open = d);
-    final s = ref.read(gameProvider).settings;
-    if (s.voice) ref.read(voiceProvider).say(d.zh, en: s.english ? d.en : null);
+    speak(ref, d.zh, en: d.en);
   }
 
   @override
   Widget build(BuildContext context) {
     final g = ref.watch(gameProvider);
     final open = _open;
-    return Scaffold(
+    return BackKey(
+        onBack: () => goBack(context),
+        child: Scaffold(
       backgroundColor: Clay.cream,
       body: SafeArea(
         child: Column(children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: Row(children: [
-              CornerButton(label: Strings.back, icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+              CornerButton(label: Strings.back, icon: Icons.arrow_back_rounded, onTap: () => goBack(context)),
               const SizedBox(width: 12),
               const SizedBox(width: 40, height: 40, child: Art('ui/recipe_book')),
               const SizedBox(width: 8),
@@ -101,7 +101,7 @@ class _BookScreenState extends ConsumerState<BookScreen> {
           ),
         ]),
       ),
-    );
+    ));
   }
 }
 

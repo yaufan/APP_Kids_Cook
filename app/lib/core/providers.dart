@@ -36,19 +36,40 @@ class GameNotifier extends Notifier<Game> {
   void settings(Settings Function(Settings s) f) => change((g) => g.copyWith(settings: f(g.settings)));
 }
 
-/// The customer at the counter: their order, and whether it was served.
+/// The customer at the counter: their order, how many of its steps are
+/// done (so a child who leaves the kitchen mid-recipe goes on from there),
+/// and whether it was served.
 class Visit {
-  const Visit(this.order, {this.served = false});
+  const Visit(this.order, {this.served = false, this.at = 0});
 
   final Order order;
   final bool served;
+
+  /// Steps of the recipe done so far.
+  final int at;
 }
 
 final visitProvider = NotifierProvider<VisitNotifier, Visit>(VisitNotifier.new);
 
 class VisitNotifier extends Notifier<Visit> {
   @override
-  Visit build() => Visit(ref.read(gameProvider).nextOrder(ref.read(randomProvider)));
+  Visit build() {
+    // A parent who changes the level changes the order waiting at the
+    // counter too (the same customer, the new level's number), not only
+    // the next customer's.
+    ref.listen(gameProvider.select((g) => g.settings.level), (_, level) {
+      if (state.served) return;
+      final dish = state.order.dish;
+      state = Visit(Order(dish, dish.countFor(level, ref.read(randomProvider))));
+    });
+    return Visit(ref.read(gameProvider).nextOrder(ref.read(randomProvider)));
+  }
+
+  /// [at] steps of the recipe are done.
+  void progress(int at) {
+    if (state.served || at == state.at) return;
+    state = Visit(state.order, at: at);
+  }
 
   /// The dish went out: coins and a star.
   void served(int coins) {
@@ -61,4 +82,34 @@ class VisitNotifier extends Notifier<Visit> {
 
   /// A particular order (the walk-through and the demo use it).
   void take(Order order) => state = Visit(order);
+}
+
+/// A simple on/off flag shared by the screens and the play-time keeper.
+class Flag extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool on) => state = on;
+}
+
+/// The app is in the background: nothing is said (RestGuard sets it).
+final hiddenProvider = NotifierProvider<Flag, bool>(Flag.new);
+
+/// Whether a dish is being made: when the play time is up, it is finished
+/// and served first (at most [RestGuard.finishDish]). The screen making it
+/// holds it, so a screen going away cannot let go of another one's dish.
+final busyProvider = Provider<Busy>((ref) => Busy());
+
+class Busy {
+  Object? _owner;
+
+  bool get busy => _owner != null;
+
+  /// [owner] is making a dish.
+  void start(Object owner) => _owner = owner;
+
+  /// [owner]'s dish is done (or it went away); another screen's goes on.
+  void end(Object owner) {
+    if (identical(_owner, owner)) _owner = null;
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -22,8 +23,10 @@ class RestaurantScreen extends ConsumerStatefulWidget {
   ConsumerState<RestaurantScreen> createState() => _RestaurantScreenState();
 }
 
-class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with SingleTickerProviderStateMixin {
+class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with SingleTickerProviderStateMixin, HushOnLeave {
   late final Sounds _sounds;
+  late final Busy _busy;
+  Timer? _thanks;
   late final _enter = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..forward();
   Order? _greeted;
   bool _thanked = false;
@@ -32,27 +35,35 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
   void initState() {
     super.initState();
     _sounds = ref.read(soundsProvider);
+    _busy = ref.read(busyProvider);
     _sounds.hold(this, Music.restaurant);
   }
 
   @override
   void dispose() {
+    _thanks?.cancel();
+    _busy.end(this);
     _enter.dispose();
     _sounds.release(this);
     super.dispose();
   }
 
   void _say(String zh, {String? en}) {
-    final s = ref.read(gameProvider).settings;
-    if (mounted && s.voice) ref.read(voiceProvider).say(zh, en: s.english ? en : null);
+    if (mounted) speak(ref, zh, en: en);
   }
 
-  /// A new customer says hello and what they would like; a served one says
-  /// thank you.
-  void _react(Visit v) {
+  /// A new customer says hello and what they would like (once the
+  /// restaurant is in sight: an order changed in parent mode is said on
+  /// coming back); a served one says thank you.
+  void _react(Visit v, bool here) {
     if (v.served) {
       if (_thanked) return;
       _thanked = true;
+      // The customer's thank-you is part of the dish: when the play time
+      // is up, the restaurant closes after it.
+      _busy.start(this);
+      _thanks?.cancel();
+      _thanks = Timer(const Duration(seconds: 4), () => _busy.end(this));
       _sounds.play('yum');
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
@@ -62,7 +73,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
       _say(Strings.yum);
       return;
     }
-    if (identical(_greeted, v.order)) return;
+    if (identical(_greeted, v.order) || !here) return;
     _greeted = v.order;
     _thanked = false;
     _enter.forward(from: 0);
@@ -78,10 +89,13 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
   Widget build(BuildContext context) {
     final g = ref.watch(gameProvider);
     final visit = ref.watch(visitProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _react(visit));
+    final here = ModalRoute.of(context)?.isCurrent ?? true;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _react(visit, here));
     final order = visit.order;
     final customer = order.dish.customer;
-    return Scaffold(
+    // The restaurant is home: the back key does nothing (it would close the app).
+    return BackKey(
+        child: Scaffold(
       body: Stack(children: [
         const Positioned.fill(child: Art('scenes/restaurant', fit: BoxFit.cover)),
         SafeArea(
@@ -98,10 +112,22 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
                 child: Row(children: [
                   SizedBox(width: 50, height: 50, child: ClayBox(color: Colors.white, radius: 25, padding: const EdgeInsets.all(4), child: const Art('chef/chef'))),
                   const SizedBox(width: 8),
-                  _Chip(art: 'ui/coin', value: g.coins, label: Strings.coins),
+                  // Big numbers shrink a little rather than push the lock off a narrow phone.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(children: [
+                          _Chip(art: 'ui/coin', value: g.coins, label: Strings.coins),
+                          const SizedBox(width: 6),
+                          _Chip(art: 'ui/star', value: g.stars, label: Strings.stars),
+                        ]),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 6),
-                  _Chip(art: 'ui/star', value: g.stars, label: Strings.stars),
-                  const Spacer(),
                   Semantics(
                     container: true,
                     button: true,
@@ -225,7 +251,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
           }),
         ),
       ]),
-    );
+    ));
   }
 }
 

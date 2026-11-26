@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/strings.dart';
 import '../../app/theme.dart';
 import '../../app/widgets.dart';
+import '../../core/game.dart';
+import '../../core/providers.dart';
 
 /// A question a grown-up answers easily but a 3 to 6 year old cannot read:
 /// the numbers are written out in Chinese characters (as in 畫畫小鎮).
@@ -53,49 +56,84 @@ abstract final class ParentPass {
   }
 }
 
+/// How many parent pages are showing that are not routes of their own (the
+/// gate): their time is not the child's play time.
+final parentShowing = ValueNotifier<int>(0);
+
 /// Full screen, so a child cannot tap past it. Three wrong answers in a row
-/// and it waits a minute.
-class ParentGatePage extends StatefulWidget {
+/// lock it for a minute, then five, then fifteen (saved: closing the app
+/// does not open it). It closes by itself when the app goes to the
+/// background or after five minutes without a touch, so a child picking up
+/// the phone later finds it shut.
+class ParentGatePage extends ConsumerStatefulWidget {
   const ParentGatePage({super.key, this.random});
 
   final math.Random? random;
 
-  static const maxMisses = 3;
-  static const lockout = Duration(minutes: 1);
-
-  static int _misses = 0;
-  static DateTime? _lockedUntil;
+  static const idle = Duration(minutes: 5);
 
   @override
-  State<ParentGatePage> createState() => _ParentGatePageState();
+  ConsumerState<ParentGatePage> createState() => _ParentGatePageState();
 }
 
-class _ParentGatePageState extends State<ParentGatePage> {
+class _ParentGatePageState extends ConsumerState<ParentGatePage> {
   late var _challenge = ParentGateChallenge.random(widget.random);
   var _typed = '';
   var _wrong = false;
   Timer? _tick;
+  AppLifecycleListener? _life;
+  late DateTime _touched;
+  var _closed = false;
+
+  DateTime get _now => ref.read(clockProvider)();
+  GateLock get _lock => ref.read(gameProvider).gate;
 
   @override
   void initState() {
     super.initState();
+    parentShowing.value++;
+    _touched = _now;
+    _settle();
+    _life = AppLifecycleListener(onHide: _close);
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_locked && mounted) setState(() {});
+      if (!mounted) return;
+      final now = _now;
+      if (now.isBefore(_touched)) _touched = now;
+      if (now.difference(_touched) >= ParentGatePage.idle) {
+        _close();
+        return;
+      }
+      _settle();
+      setState(() {});
     });
   }
 
   @override
   void dispose() {
     _tick?.cancel();
+    _life?.dispose();
+    parentShowing.value--;
     super.dispose();
   }
 
-  bool get _locked {
-    final until = ParentGatePage._lockedUntil;
-    return until != null && DateTime.now().isBefore(until);
+  /// A clock moved back cannot make the lock longer than it is.
+  void _settle() {
+    final lock = _lock, fixed = lock.settled(_now);
+    if (!identical(fixed, lock)) ref.read(gameProvider.notifier).change((g) => g.withGate(fixed));
   }
 
+  /// Left alone or the app hidden: shut, and no pass left over.
+  void _close() {
+    if (_closed || !mounted) return;
+    _closed = true;
+    ParentPass.take();
+    Navigator.of(context).pop(false);
+  }
+
+  bool get _locked => _lock.locked(_now);
+
   void _key(String k) {
+    _touched = _now;
     if (_locked) return;
     setState(() {
       _wrong = false;
@@ -108,25 +146,23 @@ class _ParentGatePageState extends State<ParentGatePage> {
     });
     if (_typed.length < '${_challenge.answer}'.length) return;
     if (_challenge.check(_typed)) {
-      ParentGatePage._misses = 0;
+      ref.read(gameProvider.notifier).change((g) => g.withGate(const GateLock()));
+      _closed = true;
       Navigator.of(context).pop(true);
       return;
     }
+    ref.read(gameProvider.notifier).change((g) => g.withGate(g.gate.wrong(_now)));
     setState(() {
       _wrong = true;
       _typed = '';
       _challenge = ParentGateChallenge.random(widget.random);
-      if (++ParentGatePage._misses >= ParentGatePage.maxMisses) {
-        ParentGatePage._misses = 0;
-        ParentGatePage._lockedUntil = DateTime.now().add(ParentGatePage.lockout);
-      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final locked = _locked;
-    final wait = locked ? ParentGatePage._lockedUntil!.difference(DateTime.now()).inSeconds + 1 : 0;
+    final wait = locked ? (_lock.until!.difference(_now).inMilliseconds / 1000).ceil() : 0;
     final need = '${_challenge.answer}'.length;
     Widget box(int i) => Container(
           width: 60,
@@ -152,7 +188,9 @@ class _ParentGatePageState extends State<ParentGatePage> {
             ),
           ),
         );
-    return Scaffold(
+    return Listener(
+        onPointerDown: (_) => _touched = _now,
+        child: Scaffold(
       backgroundColor: Clay.parentBg,
       body: SafeArea(
         child: Center(
@@ -201,6 +239,6 @@ class _ParentGatePageState extends State<ParentGatePage> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

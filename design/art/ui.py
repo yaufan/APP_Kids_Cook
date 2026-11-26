@@ -3,7 +3,7 @@
     python3 ui.py
 
 ui/<id>.svg      coin, star, recipe_book, check, hands_wash, adult_help, fire, heart,
-                 speech, arrow_flip, hand_hint, sparkle
+                 speech, arrow_flip, hand_hint, sparkle, closed_sign
 ui/anchors.json  speech: the box inside the bubble for the order; hand_hint: the fingertip
 dishes/<id>.svg  sandwich, fruit_skewer, danbing, milk_tea, dumplings: each finished
                  dish as served, in a square picture
@@ -14,7 +14,7 @@ import math
 import clay as kit
 import food
 import tools
-from clay import (ART, GOLD, SKIN, WHITE, at, begin, bubbles, capsule, circle, clay, contact, dk, ellipse, fill, group,
+from clay import (ART, GOLD, SKIN, WHITE, WOOD, at, begin, bubbles, capsule, circle, clay, contact, dk, ellipse, fill, group,
                   lt, mark, parse, rpoly, rrect, save, sparkle as twinkle, spot, star_pts, stroke, worm)
 
 ANCH = {}
@@ -149,6 +149,23 @@ def sparkle():
 
 
 # ---------------------------------------------------------------- dishes (square)
+def closed_sign():
+    """The restaurant has closed (the play time is up): its wooden sign turned
+    to the night side, a moon and stars, hung on a string from a nail. The app
+    writes 打烊了 under it."""
+    stroke(parse("M -64 -66 L 0 -112 L 64 -66"), "#8A5A35", 5)
+    clay(circle(0, -114, 10), "#C9CED6", depth=4)
+    clay(rrect(-112, -72, 224, 152, 34), WOOD, depth=16, dents=[(86, 52, 7, 20, .45)])
+    clay(rrect(-94, -56, 188, 120, 26), "#3E4C7E", depth=8, shadow=False, shine=.25)
+    # A crescent moon: the outer circle's edge, then back round the bite.
+    out = [(-30 + 34 * math.cos(math.radians(a)), 6 + 34 * math.sin(math.radians(a))) for a in range(38, 323, 5)]
+    bite = [(-16 + 27 * math.cos(math.radians(a)), -4 + 27 * math.sin(math.radians(a))) for a in range(300, 49, -5)]
+    pts = out + bite
+    clay(parse("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts) + " Z"), "#FFE27A", depth=7, shadow=False)
+    for x, y, r in ((40, -22, 16), (68, 18, 11), (26, 34, 9)):
+        twinkle(x, y, r, "#FFF1A8")
+
+
 def oval_plate(rx=170, ry=74, y=0, color=WHITE, line="#F2C89A"):
     contact(0, y + ry * .62, rx * .9, ry * .32, .25)
     clay(ellipse(0, y, rx, ry), color, depth=18, shine=.3)
@@ -205,7 +222,7 @@ def dish_dumplings():
 def main():
     items = [("coin", coin), ("star", star), ("recipe_book", recipe_book), ("check", check), ("hands_wash", hands_wash),
              ("adult_help", adult_hand), ("fire", fire), ("heart", heart), ("speech", speech), ("arrow_flip", arrow_flip),
-             ("hand_hint", hand_hint), ("sparkle", sparkle)]
+             ("hand_hint", hand_hint), ("sparkle", sparkle), ("closed_sign", closed_sign)]
     for name, fn in items:
         begin()
         fn()

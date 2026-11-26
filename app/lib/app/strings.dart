@@ -67,14 +67,22 @@ abstract final class Strings {
   static const callParent = '請爸爸媽媽來幫忙喔！';
   static const parentGateTitle = '家長確認';
   static String gateQuestion(String a, String b) => '$a 加 $b 等於多少？';
-  static const gateRules = '答錯三次要等一分鐘。';
+  static const gateRules = '答錯三次要等一分鐘，再答錯會等更久。';
   static const wrongAnswer = '不對喔，換一題。';
-  static String gateWait(int s) => '請等 $s 秒再試';
+  static String gateWait(int s) => s > 60 ? '請等 ${(s + 59) ~/ 60} 分鐘再試' : '請等 $s 秒再試';
   static const backspace = '刪掉';
   static const cancel = '取消';
 
+  // The play time is up (docs/design.md 「每天可以玩多久」).
+  static const restTitle = '打烊囉！';
+  static const restLine = '換你去做了！去幫爸爸媽媽擺碗筷吧';
+  static const restParent = '爸爸媽媽可以解開';
+
   // Parent mode.
   static const parentTitle = '家長模式';
+  static const playTime = '每次可以玩多久';
+  static String minutes(int n) => '$n 分鐘';
+  static const playTimeNote = '時間到了，餐廳就打烊，請小朋友「換你去做了！」去幫忙擺碗筷。手上的那道菜可以做完、端給客人。一小時後、或家長在打烊畫面解開，才能再玩。家長模式和 APP 放在背景的時間不算；關掉 APP 十分鐘以內再打開，會接著算。';
   static const progress = '進度';
   static String servedLine(int n, int coins) => '端給客人 $n 次，金幣 $coins 個';
   static const level = '難度';
@@ -100,5 +108,5 @@ abstract final class Strings {
   static const fullTest = '完整版（測試版的開關）';
   static const about = '關於';
   static String version(String v) => '動物小餐廳 $v';
-  static const privacy = '不連網、不定位、沒有廣告、沒有帳號。資料不會傳給任何人，只存在這支手機（和家長自己帳號的手機備份）裡。';
+  static const privacy = '不連網、不定位、沒有廣告、沒有帳號。資料不會傳給任何人，只存在這支手機裡（不會跟著手機備份到雲端，換手機時也不會帶走）。';
 }

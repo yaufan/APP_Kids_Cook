@@ -545,6 +545,19 @@ def celebrate():
     return place(2.5, parts)
 
 
+def closing():
+    """The restaurant closes (the play time is up): the shop door's little
+    bell, ting-a-ling, as the door shuts, then a soft goodnight run down the
+    glockenspiel and marimba. About 2.4 s."""
+    rng = np.random.default_rng(131)
+    parts = [(0.03 * k + rng.uniform(0, 0.01), (0.45 - 0.05 * k) * metal(3300 + 180 * (k % 2), 0.5)) for k in range(6)]
+    run = [("G5", 0.45), ("E5", 0.75), ("C5", 1.05), ("G4", 1.35)]
+    for i, (n, at) in enumerate(run):
+        last = i == len(run) - 1
+        parts += [(at, 0.55 * marimba(NOTE[n], 1.0 if last else 0.5)), (at, 0.2 * bell(NOTE[n] * 2, 0.9 if last else 0.4, bright=0.4))]
+    return place(2.4, parts)
+
+
 def coin():
     """A coin: clink-clink into the till, and a little chime."""
     return place(0.62, [(0, 0.7 * metal(2700, 0.3)), (0.075, 0.85 * metal(3150, 0.45)),
@@ -909,6 +922,7 @@ SHORT = {
     "stir": (stir, 0.50), "pour": (pour, 0.48), "sizzle": (sizzle, 0.48), "flip": (flip, 0.60),
     "plop": (plop, 0.55), "boil": (boil, 0.60), "shake": (shake, 0.55), "squeeze": (squeeze, 0.65),
     "pinch": (pinch, 0.50), "slurp": (slurp, 0.55), "yum": (yum, 0.55), "open": (open_page, 0.50),
+    "closing": (closing, 0.55),
     "voice_bear": (voice_bear, 0.72), "voice_rabbit": (voice_rabbit, 0.52), "voice_cat": (voice_cat, 0.54),
     "voice_pig": (voice_pig, 0.70), "voice_duck": (voice_duck, 0.52),
 }

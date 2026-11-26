@@ -151,6 +151,17 @@ void main() {
       await shot('90_book');
       await app.tapLabel(which.first.zh, ms: 600);
       await shot('91_recipe');
+
+      // The play time is up: the restaurant closes, and a parent opens it again.
+      app.now = app.now.add(Duration(minutes: app.game.settings.minutes + 1));
+      await app.settle(2600);
+      expect(app.location, '/rest');
+      expect(find.text(Strings.restLine), findsOneWidget);
+      await app.settle(600);
+      await shot('92_closed');
+      await app.tapLabel(Strings.restParent, ms: 600);
+      await app.answerGate();
+      expect(app.location, '/');
       await app.end();
     }, timeout: const Timeout(Duration(minutes: 8)));
   }

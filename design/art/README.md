@@ -17,7 +17,7 @@
 | `customers.py` | 5 位客人（熊、兔、貓、豬、鴨）一般和開心兩種、`customers.json`；小朋友的廚師頭像 | `customers/`、`chef/` |
 | `tools.py` | 廚房工具 20 樣、`anchors.json` | `tools/` |
 | `food.py` | 食材和做好的食物 32 樣、`anchors.json` | `food/` |
-| `ui.py` | 按鈕和小圖 12 樣、`anchors.json`；食譜書的 5 道菜 | `ui/`、`dishes/` |
+| `ui.py` | 按鈕和小圖 13 樣、`anchors.json`；食譜書的 5 道菜 | `ui/`、`dishes/` |
 | `scenes.py` | 3 張背景（1080×1920）、`scenes.json` | `scenes/` |
 | `icon.py` | APP 圖示：戴廚師帽的小熊舉著煎蛋的小鍋子，蜜桃色背景 | Android、iOS 的圖示資料夾 |
 | `preview.py` | 全部的圖排在一張大圖上（客人上面畫出嘴巴和頭頂的點） | 你指定的 PNG |
@@ -98,7 +98,7 @@ tomato、tomato_slice、bread、cheese、sandwich、banana、banana_piece、stra
 - `batter_raw`、`batter_cooked`、`crepe`、`wrapper`、`wrapper_filled`：`center`。
 
 ### 小圖 `ui/`
-coin（金幣，上面沒有字）、star、recipe_book、check、hands_wash、adult_help（「請大人幫忙」的大人的手）、fire、heart、speech（空白的白色對話框，尾巴在下面）、arrow_flip（翻面的彎箭頭）、hand_hint（提示用的手指，指頭朝上）、sparkle。
+coin（金幣，上面沒有字）、star、recipe_book、check、hands_wash、adult_help（「請大人幫忙」的大人的手）、fire、heart、speech（空白的白色對話框，尾巴在下面）、arrow_flip（翻面的彎箭頭）、hand_hint（提示用的手指，指頭朝上）、sparkle、closed_sign（打烊畫面：餐廳的木頭招牌翻到晚上那一面，月亮和星星，掛在釘子上；「打烊囉！」的字由 APP 寫）。
 
 `ui/anchors.json`：
 - `speech`：`contentTopLeft`、`contentBottomRight`（框裡面放點餐內容的範圍）、`content`（中間）、`tail`（尾巴尖端）。
