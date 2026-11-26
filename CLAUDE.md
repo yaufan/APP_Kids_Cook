@@ -52,6 +52,18 @@
 - 示範影片（每一版都要給使用者）：在 `app/` 裡 `flutter test test/demo/demo_video_test.dart --dart-define=DEMO=true`（約 5～10 分鐘，要 ffmpeg），再在專案根目錄 `python3 tools/demo_audio.py` 把背景音樂和音效混進去。輸出 `app/build/demo/demo.mp4`；`chapters.txt` 是每一段開始的格數（每秒 10 格），用來剪新功能的片段。
 
 ## 程式在哪裡
-- `app/lib/core/`：菜和步驟（`dishes.dart`）、遊戲的存檔和規則（`game.dart`）、存檔、聲音、語音。
-- `app/lib/features/`：餐廳（`restaurant`）、廚房和每一步的小遊戲（`kitchen`）、食譜書（`book`）、家長關卡和家長模式（`parent`）。
+- `app/lib/core/`：菜和步驟（`dishes.dart`）、遊戲的存檔和規則（`game.dart`：還有玩的時間 `Sitting`、打烊 `restSince`、家長關卡的鎖 `GateLock`）、`providers.dart`（客人的點餐 `Visit`：做到第幾步 `at`，家長改難度時重新點；`busyProvider` 正在做的菜；`hiddenProvider` APP 在背景）、念數量（`speech.dart`：「兩片」不念「二片」）、存檔、聲音（`sounds.dart`：媒體音量、不搶聲音焦點、音樂一個接一個換）、語音（`voice.dart`：只念最新的一句）。
+- `app/lib/app/`：路由和玩的時間（`app.dart` 的 `RestGuard`：家長模式、家長關卡、背景不算；關掉十分鐘內接著算；手上的菜可以做完，最多三分鐘；家長模式放著五分鐘或 APP 到背景就關上）、共用元件（`widgets.dart`：`speak`、`HushOnLeave` 離開畫面只停自己的話、`Later` 等語音念完、`BackKey` 返回鍵）。
+- `app/lib/features/`：餐廳（`restaurant`）、廚房和每一步的小遊戲（`kitchen`；`steps.dart` 的 `_OneFinger` 只認第一根手指）、食譜書（`book`）、打烊（`rest`）、家長關卡和家長模式（`parent`）。
+- 測試：`screens_test.dart` 是檢查程式後加的（玩的時間、返回鍵、廚房接著做、倒茶的聲音、等語音念完、「兩」、窄手機、家長關卡）；`safety_test.dart` 也檢查語音的設定、不備份、打包時的權限。
 - 圖：`design/art/`（Python 畫 SVG，黏土風）；聲音：`design/sounds/make_sounds.py`。
+
+## 目前的狀態（2026-11-26）
+- 0.1.1 已發布。0.1.2 做好了、**還沒發布**（在工作分支 `claude/relaxed-albattani-6mbwpz` 上，推 `main` 要先問使用者）。本機的分析、全部測試、完整流程（手機和平板）都過了。
+- 0.1.2 是檢查兄弟 APP 以後的修正：
+  - 新的「每次可以玩多久」（家長設 10／15／20／30 分鐘）：餐廳打烊的畫面（`features/rest/`，圖 `ui/closed_sign.svg`、聲音 `closing.wav`），手上的菜可以做完。
+  - 倒茶、倒蛋液兩根手指時聲音一直響（只認第一根手指，切、搓、攪、翻、捲也一樣）；做到一半回餐廳會接著做；改難度現在的客人馬上變；「兩片」；上面那排在窄手機不擠掉家長鎖。
+  - 語音：下一步等數數、「剛剛好！」念完；離開畫面只停自己的話；背景不說話；語音啟動時只念最新的一句。返回鍵不會關掉 APP。
+  - 家長關卡：答錯鎖 1、5、15 分鐘，關掉 APP 也記得；家長模式放著五分鐘或 APP 到背景就關上。
+  - 聲音用媒體音量（靜音、震動也有聲音）、不互相打斷；Android 11 以後的語音設定；不跟著手機備份；打包時多檢查相機、麥克風、聯絡人、照片的權限。
+- 還沒在真手機上試過：語音（Android 11 以後有沒有聲音、「兩片」念得對不對）、靜音或震動時的聲音、打烊畫面和鈴鐺聲、返回鍵、倒茶用整個手掌。
